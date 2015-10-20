@@ -2,6 +2,6 @@ package com.raycoarana.awex.callbacks;
 
 public interface DoneCallback<T> {
 
-	void onDone(T result);
+    void onDone(T result);
 
 }

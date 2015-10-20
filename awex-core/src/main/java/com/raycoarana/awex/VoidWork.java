@@ -7,16 +7,16 @@ package com.raycoarana.awex;
  */
 public abstract class VoidWork extends Work<Void> {
 
-	public VoidWork(Awex awex) {
-		super(awex);
-	}
+    public VoidWork(Awex awex) {
+        super(awex);
+    }
 
-	@Override
-	protected Void run() throws InterruptedException {
-		runWithoutResult();
-		return null;
-	}
+    @Override
+    protected Void run() throws InterruptedException {
+        runWithoutResult();
+        return null;
+    }
 
-	protected abstract void runWithoutResult() throws InterruptedException;
+    protected abstract void runWithoutResult() throws InterruptedException;
 
 }

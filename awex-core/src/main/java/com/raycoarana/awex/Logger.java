@@ -2,7 +2,7 @@ package com.raycoarana.awex;
 
 public interface Logger {
 
-	void v(String message);
+    void v(String message);
 
-	void e(String message, Exception ex);
+    void e(String message, Exception ex);
 }

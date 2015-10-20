@@ -1,8 +1,5 @@
 package com.raycoarana.awex;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
@@ -11,6 +8,11 @@ import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Implementation of work promise
@@ -32,10 +34,14 @@ class AwexPromise<T> implements Promise<T> {
     private List<CancelCallback> mCancelCallbacks = new ArrayList<>();
     private List<AlwaysCallback> mAlwaysCallbacks = new ArrayList<>();
 
+    public AwexPromise(Awex awex) {
+        this(awex, null);
+    }
+
     public AwexPromise(Awex awex, Work work) {
         mAwex = awex;
         mWork = work;
-        mId = mWork.getId();
+        mId = mWork != null ? mWork.getId() : -1;
         mUIThread = awex.provideUIThread();
         mLogger = awex.provideLogger();
         mState = STATE_PENDING;
@@ -197,26 +203,30 @@ class AwexPromise<T> implements Promise<T> {
     @Override
     public void cancel() {
         synchronized (this) {
-            mState = STATE_CANCELLED;
-            printStateChanged("CANCELLED");
-            if (mUIThread.isCurrentThread() && mCancelCallbacks.size() > 0) {
-                mAwex.submit(new Runnable() {
+            if (mState == STATE_PENDING) {
+                mState = STATE_CANCELLED;
+                printStateChanged("CANCELLED");
+                if (mUIThread.isCurrentThread() && mCancelCallbacks.size() > 0) {
+                    mAwex.submit(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        doCancel();
-                    }
+                        @Override
+                        public void run() {
+                            doCancel();
+                        }
 
-                });
-            } else {
-                doCancel();
+                    });
+                } else {
+                    doCancel();
+                }
             }
         }
     }
 
     private void doCancel() {
         synchronized (this) {
-            mAwex.cancel(mWork);
+            if (mWork != null) {
+                mAwex.cancel(mWork);
+            }
             triggerAllCancel();
             clearCallbacks();
         }
@@ -259,6 +269,32 @@ class AwexPromise<T> implements Promise<T> {
     @Override
     public int getState() {
         return mState;
+    }
+
+    @Override
+    public boolean isPending() {
+        return getState() == STATE_PENDING;
+    }
+
+    @Override
+    public boolean isResolved() {
+        return getState() == STATE_RESOLVED;
+    }
+
+    @Override
+    public boolean isRejected() {
+        return getState() == STATE_REJECTED;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return getState() == STATE_CANCELLED;
+    }
+
+    @Override
+    public boolean isCompleted() {
+        int state = getState();
+        return state == STATE_RESOLVED || state == STATE_REJECTED || state == STATE_CANCELLED;
     }
 
     @Override
@@ -405,6 +441,17 @@ class AwexPromise<T> implements Promise<T> {
             }
         }
         return this;
+    }
+
+    @Override
+    public Promise<T> or(Promise<T> promise) {
+        return new OrPromise<>(mAwex, this, promise);
+    }
+
+    @Override
+    public Promise<Collection<T>> and(Promise<T> promise) {
+        List<Promise<T>> promises = Arrays.asList(this, promise);
+        return new AllOfPromise<>(mAwex, promises);
     }
 
     private boolean shouldExecuteInBackground(AlwaysCallback callback) {

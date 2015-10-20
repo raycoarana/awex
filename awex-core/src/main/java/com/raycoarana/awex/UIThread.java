@@ -2,8 +2,8 @@ package com.raycoarana.awex;
 
 public interface UIThread {
 
-	boolean isCurrentThread();
+    boolean isCurrentThread();
 
-	void post(Runnable runnable);
+    void post(Runnable runnable);
 
 }
