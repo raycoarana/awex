@@ -1,0 +1,60 @@
+// Define coverage source.
+// If you have rs/aidl etc... add them here.
+def coverageSourceDirs = [
+        'src/main/java'
+]
+
+allprojects.forEach { project ->
+    project.plugins.apply('jacoco')
+
+    project.jacoco {
+        toolVersion = "0.7.2.201409121644"
+    }
+
+    def dependsOn = []
+    if (project.plugins.hasPlugin('com.android.library')) {
+        dependsOn += 'testDebugUnitTest'
+    } else if (project.plugins.hasPlugin('java')) {
+        dependsOn += ':' + project.name + ':test'
+    } else {
+        return
+    }
+
+    print dependsOn
+
+    project.task("jacocoTestReport" + project.name.capitalize(), type: JacocoReport, dependsOn: dependsOn) {
+        group = 'Reporting'
+        description = 'Generate Jacoco coverage reports after running tests.'
+
+        reports {
+            xml {
+                enabled = true
+                destination "${project.buildDir}/reports/jacoco/jacoco.xml"
+            }
+            html {
+                enabled = true
+                destination "${project.buildDir}/reports/jacoco"
+            }
+        }
+
+        classDirectories = fileTree(
+                dir: 'build/intermediates/classes/debug',
+                excludes: [
+                        '**/R.class',
+                        '**/R$*.class',
+                        '**/BuildConfig*'
+                ]
+        )
+
+        sourceDirectories = files(coverageSourceDirs)
+        executionData = files('build/jacoco/testDebugUnitTest.exec')
+
+        doFirst {
+            files('build/intermediates/classes/debug').getFiles().each { file ->
+                if (file.name.contains('$$')) {
+                    file.renameTo(file.path.replace('$$', '$'))
+                }
+            }
+        }
+    }
+}
