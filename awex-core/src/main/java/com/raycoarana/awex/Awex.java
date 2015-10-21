@@ -2,21 +2,45 @@ package com.raycoarana.awex;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Awex {
 
     private final UIThread mUIThread;
     private final Logger mLogger;
-    private final ExecutorService mExecutor;
-    private final AtomicLong mIdProvider = new AtomicLong();
+    private final AtomicLong mWorkIdProvider = new AtomicLong();
+    private final AwexWorkQueue mWorkQueue;
+    private final Set<Worker> mWorkers;
+    private final int mMinThreads;
+    private final int mMaxThreads;
+    private final AtomicLong mThreadIdProvider = new AtomicLong();
+    private final ScheduledExecutorService mMonitorExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
 
-    public Awex(UIThread uiThread, Logger logger) {
+    public Awex(UIThread uiThread, Logger logger, int minThreads, int maxThreads) {
         mUIThread = uiThread;
         mLogger = logger;
-        mExecutor = Executors.newFixedThreadPool(5);
+        mWorkQueue = new AwexWorkQueue();
+        mWorkers = new HashSet<>(maxThreads);
+        mMinThreads = minThreads;
+        mMaxThreads = maxThreads;
+
+        initializeThreads();
+    }
+
+    private void initializeThreads() {
+        for (int i = 0; i < mMinThreads; i++) {
+            createNewWorker();
+        }
+    }
+
+    private void createNewWorker() {
+        mWorkers.add(new Worker(mThreadIdProvider.incrementAndGet(), mWorkQueue, mLogger));
     }
 
     UIThread provideUIThread() {
@@ -28,22 +52,23 @@ public class Awex {
     }
 
     long provideWorkId() {
-        return mIdProvider.incrementAndGet();
+        return mWorkIdProvider.incrementAndGet();
     }
 
     public <T> Promise<T> submit(final Work<T> work) {
-        work.markQueue();
-        mExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                work.execute();
+        synchronized (this) {
+            work.initialize(this);
+            work.markQueue();
+            if (mWorkQueue.waiters() == 0 && mWorkers.size() < mMaxThreads) {
+                createNewWorker();
             }
-        });
+            mWorkQueue.insert(work);
+        }
         return work.getPromise();
     }
 
     void submit(Runnable runnable) {
-        mExecutor.submit(runnable);
+        mCallbackExecutor.submit(runnable);
     }
 
     public <T> void cancel(Work<T> work) {

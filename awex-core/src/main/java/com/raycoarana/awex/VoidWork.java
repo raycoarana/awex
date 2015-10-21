@@ -7,8 +7,12 @@ package com.raycoarana.awex;
  */
 public abstract class VoidWork extends Work<Void> {
 
-    public VoidWork(Awex awex) {
-        super(awex);
+    public VoidWork() {
+        super();
+    }
+
+    public VoidWork(int priority) {
+        super(priority);
     }
 
     @Override

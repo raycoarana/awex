@@ -10,6 +10,7 @@ package com.raycoarana.awex;
  */
 public abstract class Work<T> {
 
+    public static final int STATE_NOT_INITIALIZED = -1;
     public static final int STATE_NOT_QUEUE = 0;
     public static final int STATE_QUEUE = 1;
     public static final int STATE_RUNNING = 2;
@@ -23,26 +24,33 @@ public abstract class Work<T> {
     public static final int PRIORITY_HIGH = 4;
     public static final int PRIORITY_REAL_TIME = Integer.MAX_VALUE;
 
-    private final Logger mLogger;
-    private final long mId;
-    private final AwexPromise<T> mPromise;
     private final int mPriority;
 
-    private int mCurrentState = STATE_NOT_QUEUE;
+    private Logger mLogger;
+    private long mId;
+    private AwexPromise<T> mPromise;
+    private int mCurrentState = STATE_NOT_INITIALIZED;
 
-    public Work(Awex awex) {
-        this(awex, PRIORITY_NORMAL);
+    public Work() {
+        this(PRIORITY_NORMAL);
     }
 
-    public Work(Awex awex, int priority) {
-        mId = awex.provideWorkId();
+    public Work(int priority) {
         mPriority = priority;
-        mPromise = new AwexPromise<>(awex, this);
+    }
+
+    void initialize(Awex awex) {
+        mId = awex.provideWorkId();
         mLogger = awex.provideLogger();
+
+        mCurrentState = STATE_NOT_QUEUE;
         printStateChanged("NOT_QUEUE");
+
+        mPromise = new AwexPromise<>(awex, this);
     }
 
     public long getId() {
+        checkInitialized();
         return mId;
     }
 
@@ -55,12 +63,21 @@ public abstract class Work<T> {
     }
 
     public Promise<T> getPromise() {
+        checkInitialized();
         return mPromise;
+    }
+
+    private void checkInitialized() {
+        if (mCurrentState == STATE_NOT_INITIALIZED) {
+            throw new IllegalStateException("Work not already initialized, before calling this method ensure this work is submitted");
+        }
     }
 
     protected abstract T run() throws InterruptedException;
 
     final void execute() {
+        checkInitialized();
+
         mCurrentState = STATE_RUNNING;
         printStateChanged("RUNNING");
         try {
@@ -79,11 +96,15 @@ public abstract class Work<T> {
     }
 
     final void softCancel() {
+        checkInitialized();
+
         mCurrentState = STATE_CANCELLING;
         printStateChanged("CANCELLING");
     }
 
     final void markQueue() {
+        checkInitialized();
+
         mCurrentState = STATE_QUEUE;
         printStateChanged("QUEUE");
     }

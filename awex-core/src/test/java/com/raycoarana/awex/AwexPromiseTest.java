@@ -9,10 +9,8 @@ import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -68,22 +66,6 @@ public class AwexPromiseTest extends BasePromiseTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void shouldFailToGetResultBeforeResolved() throws Exception {
-        setUpAwex();
-
-        mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.getResult();
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void shouldFailToGetResultOrDefaultBeforeResolved() throws Exception {
-        setUpAwex();
-
-        mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.getResultOrDefault(SOME_DEFAULT_RESULT);
-    }
-
-    @Test(expected = IllegalStateException.class)
     public void shouldFailToGetResultOfCancelledPromise() throws Exception {
         setUpAwex();
 
@@ -92,13 +74,13 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.getResult();
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void shouldFailToGetResultOrDefaultOfCancelledPromise() throws Exception {
+    @Test
+    public void shouldReturnDefaultValueWhenGetResultOrDefaultOfCancelledPromise() throws InterruptedException {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mWork);
         mPromise.cancel();
-        mPromise.getResultOrDefault(SOME_DEFAULT_RESULT);
+        assertEquals(SOME_DEFAULT_RESULT, mPromise.getResultOrDefault(SOME_DEFAULT_RESULT));
     }
 
     @Test
@@ -358,7 +340,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     }
 
     @Test
-    public void shouldGetDefaultValueWhenPromiseIsRejected() {
+    public void shouldGetDefaultValueWhenPromiseIsRejected() throws InterruptedException {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mWork);

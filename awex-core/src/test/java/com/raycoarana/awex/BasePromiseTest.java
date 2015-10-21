@@ -19,9 +19,9 @@ public class BasePromiseTest {
     @Mock
     protected Work mWork;
     @Mock
-    protected Logger mLogger;
-    @Mock
     protected UIThread mUIThread;
+    @Mock
+    protected Logger mLogger;
 
     @Before
     public void setUp() {

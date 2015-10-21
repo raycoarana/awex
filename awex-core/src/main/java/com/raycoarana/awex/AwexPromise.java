@@ -264,6 +264,8 @@ class AwexPromise<T> implements Promise<T> {
         mFailCallbacks.clear();
         mCancelCallbacks.clear();
         mAlwaysCallbacks.clear();
+
+        notifyAll();
     }
 
     @Override
@@ -300,9 +302,9 @@ class AwexPromise<T> implements Promise<T> {
     @Override
     public T getResult() throws Exception {
         synchronized (this) {
+            blockWhilePending();
+
             switch (mState) {
-                case STATE_PENDING:
-                    throw new IllegalStateException("Couldn't get result from a pending promise");
                 case STATE_CANCELLED:
                     throw new IllegalStateException("Couldn't get result from a cancelled promise");
                 case STATE_REJECTED:
@@ -314,17 +316,29 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public T getResultOrDefault(T defaultValue) {
+    public T getResultOrDefault(T defaultValue) throws InterruptedException {
         synchronized (this) {
+            blockWhilePending();
+
             switch (mState) {
-                case STATE_PENDING:
-                    throw new IllegalStateException("Couldn't get result from a pending promise");
                 case STATE_CANCELLED:
-                    throw new IllegalStateException("Couldn't get result from a cancelled promise");
                 case STATE_REJECTED:
                     return defaultValue;
                 default: //Promise.STATE_RESOLVED:
                     return mResult;
+            }
+        }
+    }
+
+    private void blockWhilePending() throws InterruptedException {
+        synchronized (this) {
+            while (isPending()) {
+                try {
+                    wait();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw ex;
+                }
             }
         }
     }
@@ -459,7 +473,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     private void printStateChanged(String newState) {
-        mLogger.v("Promise of work " + mId + " changed to state" + newState);
+        mLogger.v("Promise of work " + mId + " changed to state " + newState);
     }
 
     private abstract class CancellableRunnable implements Runnable {

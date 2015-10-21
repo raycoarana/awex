@@ -59,24 +59,23 @@ public interface Promise<T> {
     boolean isCompleted();
 
     /**
-     * Get the result of the promise, this method will only work if the promise is not in STATE_PENDING or
-     * STATE_CANCELLED states.
+     * Will block the current thread until the promise if resolved, rejected or cancelled. It will return
+     * the value of the promise in case of resolved or throw an exception in any other case.
      *
      * @return the result of the work if any
-     * @throws IllegalStateException if the state of the promise is STATE_PENDING or STATE_CANCELLED
+     * @throws IllegalStateException if the state of the promise is STATE_CANCELLED
      * @throws Exception             an exception if the work fails to execute
      */
     T getResult() throws Exception;
 
     /**
-     * Get the result of the promise, this method will only work if the promise is not in STATE_PENDING or
-     * STATE_CANCELLED states.
+     * Will block the current thread until the promise if resolved, rejected or cancelled. It will return
+     * the value of the promise in case of resolved or return the defaultValue in any other case.
      *
-     * @param defaultValue default value to return in case that the promise was rejected
+     * @param defaultValue default value to return in case that the promise was rejected or cancelled
      * @return the result of the work if any
-     * @throws IllegalStateException if the state of the promise is STATE_PENDING or STATE_CANCELLED
      */
-    T getResultOrDefault(T defaultValue);
+    T getResultOrDefault(T defaultValue) throws InterruptedException;
 
     Promise<T> done(DoneCallback<T> callback);
 
