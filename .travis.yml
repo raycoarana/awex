@@ -1,0 +1,11 @@
+language: android
+android:
+    components:
+        - build-tools-21.1.2
+        - android-21
+before_script:
+    - chmod +x gradlew
+script:
+    - ./gradlew assembleDebug assembleRelease check
+after_success:
+    - ./gradlew jacocoTestReport coveralls
