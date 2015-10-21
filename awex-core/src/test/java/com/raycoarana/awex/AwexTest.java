@@ -6,6 +6,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class AwexTest {
 
@@ -36,6 +37,34 @@ public class AwexTest {
         });
 
         assertEquals(SOME_VALUE, mWorkPromise.getResult());
+    }
+
+    @Test
+    public void shouldCreateAnAlreadyResolvedPromise() throws Exception {
+        setUpAwex();
+
+        Promise<Integer> promise = mAwex.of(SOME_VALUE);
+
+        assertTrue(promise.isResolved());
+        assertEquals(SOME_VALUE, promise.getResult());
+    }
+
+    @Test
+    public void shouldCreateARejectedPromiseWhenCreatedWithNullValue() {
+        setUpAwex();
+
+        Promise<Integer> promise = mAwex.of(null);
+
+        assertTrue(promise.isRejected());
+    }
+
+    @Test
+    public void shouldCreateARejectedPromise() {
+        setUpAwex();
+
+        Promise<Integer> promise = mAwex.absent();
+
+        assertTrue(promise.isRejected());
     }
 
     private void setUpAwex() {

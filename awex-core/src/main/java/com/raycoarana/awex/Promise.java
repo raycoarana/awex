@@ -34,7 +34,9 @@ public interface Promise<T> {
      * and even dispatched callbacks to UI thread will be mark to be ignored. You could expect no side effects of any
      * callback after this call.
      */
-    void cancel();
+    void cancelWork();
+
+    void cancelWork(boolean mayInterrupt);
 
     /**
      * Gets the current state of the promise

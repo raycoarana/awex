@@ -70,7 +70,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancel();
+        mPromise.cancelWork();
         mPromise.getResult();
     }
 
@@ -79,7 +79,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancel();
+        mPromise.cancelWork();
         assertEquals(SOME_DEFAULT_RESULT, mPromise.getResultOrDefault(SOME_DEFAULT_RESULT));
     }
 
@@ -355,7 +355,7 @@ public class AwexPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mWork);
         mPromise.cancel(mCancelCallback);
-        mPromise.cancel();
+        mPromise.cancelWork();
 
         verify(mCancelCallback).onCancel();
     }
@@ -365,7 +365,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancel();
+        mPromise.cancelWork();
         mPromise.cancel(mCancelCallback);
 
         verify(mCancelCallback).onCancel();
@@ -378,7 +378,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise = new AwexPromise<>(mAwex, mWork);
         mPromise.cancel(buildFailingCancelCallback());
         mPromise.cancel(mCancelCallback);
-        mPromise.cancel();
+        mPromise.cancelWork();
 
         verify(mCancelCallback).onCancel();
         verify(mLogger).e(anyString(), any(Exception.class));
@@ -396,7 +396,7 @@ public class AwexPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mWork);
         mPromise.cancel(mUICancelCallback);
-        mPromise.cancel();
+        mPromise.cancelWork();
 
         verify(mUIThread).post(any(Runnable.class));
         verify(mUICancelCallback).onCancel();
@@ -409,7 +409,7 @@ public class AwexPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mWork);
         mPromise.cancel(mCancelCallback);
-        mPromise.cancel();
+        mPromise.cancelWork();
 
         verify(mUIThread, never()).post(any(Runnable.class));
         verify(mAwex).submit(any(Runnable.class));
@@ -422,7 +422,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         givenThatUIThreadIsCurrentThread();
 
         mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancel();
+        mPromise.cancelWork();
         mPromise.cancel(mCancelCallback);
 
         verify(mUIThread, never()).post(any(Runnable.class));

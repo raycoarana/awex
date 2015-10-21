@@ -45,7 +45,7 @@ class OrPromise<T> extends AwexPromise<T> {
             public void onCancel() {
                 synchronized (OrPromise.this) {
                     if (getState() == STATE_PENDING) {
-                        cancel();
+                        cancelWork(false);
                     }
                 }
             }
@@ -53,11 +53,11 @@ class OrPromise<T> extends AwexPromise<T> {
     }
 
     @Override
-    public void cancel() {
+    public void cancelWork(boolean mayInterrupt) {
         synchronized (this) {
-            super.cancel();
-            mMainPromise.cancel();
-            mSecondChoicePromise.cancel();
+            super.cancelWork(mayInterrupt);
+            mMainPromise.cancelWork(mayInterrupt);
+            mSecondChoicePromise.cancelWork(mayInterrupt);
         }
     }
 

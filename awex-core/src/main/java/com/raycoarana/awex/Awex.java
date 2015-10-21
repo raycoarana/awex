@@ -1,5 +1,7 @@
 package com.raycoarana.awex;
 
+import com.raycoarana.awex.exceptions.AbsentValueException;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,6 +23,7 @@ public class Awex {
     private final AtomicLong mThreadIdProvider = new AtomicLong();
     private final ScheduledExecutorService mMonitorExecutor = Executors.newSingleThreadScheduledExecutor();
     private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
+    private AwexPromise mAbsentPromise;
 
     public Awex(UIThread uiThread, Logger logger, int minThreads, int maxThreads) {
         mUIThread = uiThread;
@@ -31,12 +34,18 @@ public class Awex {
         mMaxThreads = maxThreads;
 
         initializeThreads();
+        initializeAbsentPromise();
     }
 
     private void initializeThreads() {
         for (int i = 0; i < mMinThreads; i++) {
             createNewWorker();
         }
+    }
+
+    private void initializeAbsentPromise() {
+        mAbsentPromise = new AwexPromise<>(this);
+        mAbsentPromise.reject(new AbsentValueException());
     }
 
     private void createNewWorker() {
@@ -71,10 +80,12 @@ public class Awex {
         mCallbackExecutor.submit(runnable);
     }
 
-    public <T> void cancel(Work<T> work) {
+    public <T> void cancel(Work<T> work, boolean mayInterrupt) {
         work.softCancel();
-        //TODO: check in some time if softCancel do the cancel and if not do hardCancel calling interrupt on the thread
-        // that will sacrifice the thread and we will need to recreate a new one...
+        if (mayInterrupt) {
+            //TODO: get thread, extract from thread pool and interrupt.
+            // Create a new thread if we are below minimum threads
+        }
     }
 
     /**
@@ -108,5 +119,34 @@ public class Awex {
 
     public <T> Promise<MultipleResult<T>> afterAll(Collection<Promise<T>> promises) {
         return new AfterAllPromise<>(this, promises);
+    }
+
+    /**
+     * Creates an already resolved promise with the value passed as parameter
+     *
+     * @param value value to use to resolve the promise, in case that the value is null a rejected promise is returned
+     * @param <T>   type of the result
+     * @return a promise already resolved
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Promise<T> of(T value) {
+        if (value == null) {
+            return (Promise<T>) mAbsentPromise;
+        } else {
+            AwexPromise<T> promise = new AwexPromise<>(this);
+            promise.resolve(value);
+            return promise;
+        }
+    }
+
+    /**
+     * Returns an already rejected promise
+     *
+     * @param <T> type of result
+     * @return a promise already rejected
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Promise<T> absent() {
+        return (Promise<T>) mAbsentPromise;
     }
 }

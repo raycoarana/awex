@@ -56,7 +56,7 @@ class AfterAllPromise<T> extends AwexPromise<MultipleResult<T>> {
                 public void onCancel() {
                     synchronized (AfterAllPromise.this) {
                         if (getState() == STATE_PENDING) {
-                            cancel();
+                            cancelWork(false);
                         }
                     }
                 }
@@ -70,12 +70,12 @@ class AfterAllPromise<T> extends AwexPromise<MultipleResult<T>> {
     }
 
     @Override
-    public void cancel() {
+    public void cancelWork(boolean mayInterrupt) {
         synchronized (this) {
-            super.cancel();
+            super.cancelWork(mayInterrupt);
 
             for (Promise<T> promise : mPromises) {
-                promise.cancel();
+                promise.cancelWork(mayInterrupt);
             }
         }
     }

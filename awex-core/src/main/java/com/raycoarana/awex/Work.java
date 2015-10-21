@@ -40,6 +40,10 @@ public abstract class Work<T> {
     }
 
     void initialize(Awex awex) {
+        if (mCurrentState != STATE_NOT_INITIALIZED) {
+            throw new IllegalStateException("Trying to reuse an already submitted work");
+        }
+
         mId = awex.provideWorkId();
         mLogger = awex.provideLogger();
 
@@ -62,6 +66,12 @@ public abstract class Work<T> {
         return mCurrentState;
     }
 
+    public void reset() {
+        if (mCurrentState != STATE_FINISHED) {
+            throw new IllegalStateException("Trying to reuse an already submitted work");
+        }
+    }
+
     public Promise<T> getPromise() {
         checkInitialized();
         return mPromise;
@@ -75,7 +85,7 @@ public abstract class Work<T> {
 
     protected abstract T run() throws InterruptedException;
 
-    final void execute() {
+    final void execute() throws InterruptedException {
         checkInitialized();
 
         mCurrentState = STATE_RUNNING;
@@ -88,6 +98,13 @@ public abstract class Work<T> {
                 return;
             }
             mPromise.resolve(result);
+        } catch (InterruptedException ex) {
+            if (mPromise.isCancelled()) {
+                mCurrentState = STATE_CANCELLED;
+                printStateChanged("CANCELLED");
+            }
+            Thread.currentThread().interrupt();
+            throw ex;
         } catch (Exception ex) {
             mPromise.reject(ex);
         }

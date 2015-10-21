@@ -201,7 +201,12 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public void cancel() {
+    public void cancelWork() {
+        cancelWork(false);
+    }
+
+    @Override
+    public void cancelWork(final boolean mayInterrupt) {
         synchronized (this) {
             if (mState == STATE_PENDING) {
                 mState = STATE_CANCELLED;
@@ -211,21 +216,21 @@ class AwexPromise<T> implements Promise<T> {
 
                         @Override
                         public void run() {
-                            doCancel();
+                            doCancel(mayInterrupt);
                         }
 
                     });
                 } else {
-                    doCancel();
+                    doCancel(mayInterrupt);
                 }
             }
         }
     }
 
-    private void doCancel() {
+    private void doCancel(boolean mayInterrupt) {
         synchronized (this) {
             if (mWork != null) {
-                mAwex.cancel(mWork);
+                mAwex.cancel(mWork, mayInterrupt);
             }
             triggerAllCancel();
             clearCallbacks();

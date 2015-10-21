@@ -74,7 +74,7 @@ public class OrPromiseTest extends BasePromiseTest {
 
         setUpPromises();
 
-        mMainPromise.cancel();
+        mMainPromise.cancelWork();
 
         assertTrue(mOrPromise.isCancelled());
     }
@@ -86,7 +86,7 @@ public class OrPromiseTest extends BasePromiseTest {
         setUpPromises();
 
         mMainPromise.reject(new Exception());
-        mSecondChoicePromise.cancel();
+        mSecondChoicePromise.cancelWork();
 
         assertTrue(mOrPromise.isCancelled());
     }
