@@ -4,6 +4,7 @@ import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
+import com.raycoarana.awex.transform.Filter;
 
 import java.util.Collection;
 
@@ -105,4 +106,7 @@ public interface Promise<T> {
      */
     Promise<Collection<T>> and(Promise<T> promise);
 
+    <U, V extends Collection<U>> Promise<V> filter(Filter<U> filter);
+
+    <U, V extends Collection<U>> Promise<V> filterParallel(Filter<U> filter);
 }

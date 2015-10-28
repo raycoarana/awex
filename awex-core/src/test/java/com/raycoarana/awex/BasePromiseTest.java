@@ -37,12 +37,16 @@ public class BasePromiseTest {
     private void givenAnAwex() {
         when(mAwex.provideLogger()).thenReturn(mLogger);
         when(mAwex.provideUIThread()).thenReturn(mUIThread);
+        when(mAwex.getNumberOfThreads()).thenReturn(4);
 
-        doAnswer(new Answer<Void>() {
+        doAnswer(new Answer<Promise>() {
             @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                ((Work) invocation.getArguments()[0]).execute();
-                return null;
+            public Promise answer(InvocationOnMock invocation) throws Throwable {
+                Work work = ((Work) invocation.getArguments()[0]);
+                work.initialize(mAwex);
+                work.markQueue();
+                work.execute();
+                return work.getPromise();
             }
         }).when(mAwex).submit(isA(Work.class));
 

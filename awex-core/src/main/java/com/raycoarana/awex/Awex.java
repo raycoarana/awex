@@ -149,4 +149,8 @@ public class Awex {
     public <T> Promise<T> absent() {
         return (Promise<T>) mAbsentPromise;
     }
+
+    int getNumberOfThreads() {
+        return Runtime.getRuntime().availableProcessors();
+    }
 }

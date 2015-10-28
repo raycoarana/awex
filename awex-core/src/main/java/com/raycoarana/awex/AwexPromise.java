@@ -8,6 +8,7 @@ import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
+import com.raycoarana.awex.transform.Filter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,7 +20,8 @@ import java.util.List;
  */
 class AwexPromise<T> implements Promise<T> {
 
-    private final Awex mAwex;
+    protected final Awex mAwex;
+
     private final Work mWork;
     private final UIThread mUIThread;
     private final Logger mLogger;
@@ -479,6 +481,22 @@ class AwexPromise<T> implements Promise<T> {
 
     private void printStateChanged(String newState) {
         mLogger.v("Promise of work " + mId + " changed to state " + newState);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <U, V extends Collection<U>> Promise<V> filter(Filter<U> filter) {
+        return new SingleThreadFilterPromise(mAwex, this, filter);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <U, V extends Collection<U>> Promise<V> filterParallel(Filter<U> filter) {
+        if(mAwex.getNumberOfThreads() > 1) {
+            return new MultiThreadFilterPromise(mAwex, this, filter);
+        } else {
+            return filter(filter);
+        }
     }
 
     private abstract class CancellableRunnable implements Runnable {

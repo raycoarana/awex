@@ -40,4 +40,8 @@ public class MultipleResult<T> {
         return mPromises[index].getState();
     }
 
+    public int getCount() {
+        return mResults.length;
+    }
+
 }
