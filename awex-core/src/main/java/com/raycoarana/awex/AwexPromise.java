@@ -9,6 +9,7 @@ import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
 import com.raycoarana.awex.transform.Filter;
+import com.raycoarana.awex.transform.Mapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -496,6 +497,22 @@ class AwexPromise<T> implements Promise<T> {
             return new MultiThreadFilterPromise(mAwex, this, filter);
         } else {
             return filter(filter);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <U, W, V extends Collection<W>> Promise<V> map(Mapper<U, W> mapper) {
+        return new SingleThreadMapperPromise(mAwex, this, mapper);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <U, W, V extends Collection<W>> Promise<V> mapParallel(Mapper<U, W> mapper) {
+        if(mAwex.getNumberOfThreads() > 1) {
+            return new MultiThreadMapperPromise(mAwex, this, mapper);
+        } else {
+            return map(mapper);
         }
     }
 

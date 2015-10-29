@@ -5,6 +5,7 @@ import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.transform.Filter;
+import com.raycoarana.awex.transform.Mapper;
 
 import java.util.Collection;
 
@@ -109,4 +110,10 @@ public interface Promise<T> {
     <U, V extends Collection<U>> Promise<V> filter(Filter<U> filter);
 
     <U, V extends Collection<U>> Promise<V> filterParallel(Filter<U> filter);
+
+    @SuppressWarnings("unchecked")
+    <U, W, V extends Collection<W>> Promise<V> map(Mapper<U, W> mapper);
+
+    @SuppressWarnings("unchecked")
+    <U, W, V extends Collection<W>> Promise<V> mapParallel(Mapper<U, W> mapper);
 }
