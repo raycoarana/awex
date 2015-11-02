@@ -88,7 +88,7 @@ awex.submit(someTask)
     });
 ```
 
-But if you are in Android, many times you want that some of that callbacks gets executed in the main thread to update the UI. For that purpose, Awex provide the same interfaces prefixed by _UI_. Every time a _UI_ callback is added, its code is executed in the main thread.
+But if you are in Android, many times you want that some of that callbacks gets executed in the main thread to update the UI. For that purpose, Awex provide the same interfaces prefixed by _UI_. Everytime an _UI_ callback is added, its code is executed in the main thread.
 
 ```java
 awex.submit(someTask)
@@ -135,8 +135,8 @@ Integer result = promise.getResultOrDefault(42); //will return 42 when the task 
 Cancelling tasks through promises
 ---------------------------------
 A problem you could face when using promises on Android is that sometimes, when the user leaves some Activity or Fragment, any task that is running in the background to load information don't need to be completed and can be cancelled.
-Even more, you must cancel it and remove any reference to the UI, so you don't leak the Activity or Fragment. For that and many other cases, Awex let you cancel tasks using the associated promise.
-Tasks can be interrupted or not when gets cancelled, tasks can query is they are already cancelled or not, so they can stop doing things once cancelled in a gracefully way.
+Even more, you must cancel it and remove any reference to the UI, so you don't leak the Activity or Fragment. For that and many other cases, Awex lets you cancel tasks using the associated promise.
+Tasks can be interrupted or not when gets cancelled, tasks can query if they are already cancelled or not, so they can stop doing things once cancelled in a gracefully way.
 In any case, after a promise/task is cancelled, no done/fail/always callback will be executed.
 
 ```java
@@ -194,7 +194,7 @@ Not just promises
 -----------------
 There are many more things you can do with Awex and its promises.
 
-##OR operator
+###OR operator
 
 ```java
 awex.submit(new Task<Integer>() {
@@ -211,9 +211,9 @@ awex.submit(new Task<Integer>() {
     }
 });
 ```
-Awex supports the doing an OR of many promises using the _anyOf()_ method in the Awex object.
+Awex supports doing an OR of many promises using the _anyOf()_ method in the Awex object.
 
-##AND operator
+###AND operator
 
 ```java
 awex.submit(new Task<Integer>() {
@@ -230,9 +230,9 @@ awex.submit(new Task<Integer>() {
     }
 });
 ```
-Awex supports the doing an AND of many promises using the _allOf()_ method in the Awex object.
+Awex supports doing an AND of many promises using the _allOf()_ method in the Awex object.
 
-##AfterAll operator
+###AfterAll operator
 
 ```java
 awex.afterAll(awex.of(41), awex.of(42), awex.of(43))
@@ -244,9 +244,9 @@ awex.afterAll(awex.of(41), awex.of(42), awex.of(43))
     });
 ```
 
-##Filter operator
+###Filter operator
 
-##Map operator
+###Map operator
 
 Download
 --------
