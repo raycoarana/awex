@@ -1,8 +1,8 @@
 package com.raycoarana.awex;
 
-class WorkPriorityComparator implements java.util.Comparator<Work> {
+class TaskPriorityComparator implements java.util.Comparator<Task> {
     @Override
-    public int compare(Work lhs, Work rhs) {
+    public int compare(Task lhs, Task rhs) {
         return lhs.getPriority() < rhs.getPriority() ? -1 : (lhs.getPriority() == rhs.getPriority() ? 0 : 1);
     }
 }

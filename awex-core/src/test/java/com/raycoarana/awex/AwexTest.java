@@ -29,7 +29,7 @@ public class AwexTest {
     public void shouldExecuteSimpleWork() throws Exception {
         setUpAwex();
 
-        mWorkPromise = mAwex.submit(new Work<Integer>() {
+        mWorkPromise = mAwex.submit(new Task<Integer>() {
             @Override
             protected Integer run() throws InterruptedException {
                 return SOME_VALUE;

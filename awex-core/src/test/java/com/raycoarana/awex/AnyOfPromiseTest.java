@@ -76,14 +76,14 @@ public class AnyOfPromiseTest extends BasePromiseTest {
 
         setUpPromises();
 
-        mSecondPromise.cancelWork();
+        mSecondPromise.cancelTask();
 
         assertTrue(mAnyOfPromise.isCancelled());
     }
 
     private void setUpPromises() {
-        mFirstPromise = new AwexPromise<>(mAwex, mWork);
-        mSecondPromise = new AwexPromise<>(mAwex, mWork);
+        mFirstPromise = new AwexPromise<>(mAwex, mTask);
+        mSecondPromise = new AwexPromise<>(mAwex, mTask);
         mAnyOfPromise = new AnyOfPromise<>(mAwex,
                 Arrays.<Promise<Integer>>asList(mFirstPromise, mSecondPromise));
     }

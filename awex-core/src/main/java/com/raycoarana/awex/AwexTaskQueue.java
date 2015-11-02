@@ -3,25 +3,25 @@ package com.raycoarana.awex;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class AwexWorkQueue {
+class AwexTaskQueue {
 
     private static final int INITIAL_CAPACITY = 4;
 
-    private final PriorityBlockingQueue<Work> mWorkQueue;
+    private final PriorityBlockingQueue<Task> mTaskQueue;
     private final AtomicInteger mWaitersCount = new AtomicInteger();
 
-    public AwexWorkQueue() {
-        mWorkQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY, new WorkPriorityComparator());
+    public AwexTaskQueue() {
+        mTaskQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY, new TaskPriorityComparator());
     }
 
-    public void insert(Work work) {
-        mWorkQueue.offer(work);
+    public void insert(Task task) {
+        mTaskQueue.offer(task);
     }
 
-    public Work take() throws InterruptedException {
+    public Task take() throws InterruptedException {
         try {
             mWaitersCount.incrementAndGet();
-            return mWorkQueue.take();
+            return mTaskQueue.take();
         } finally {
             mWaitersCount.decrementAndGet();
         }

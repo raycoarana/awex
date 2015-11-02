@@ -40,7 +40,7 @@ public class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromis
         }).cancel(new CancelCallback() {
             @Override
             public void onCancel() {
-                AbstractMultiThreadPromise.this.cancelWork();
+                AbstractMultiThreadPromise.this.cancelTask();
             }
         });
     }
@@ -62,7 +62,7 @@ public class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromis
     private Collection<Promise<Collection<U>>> launchAll(Collection<List<T>> itemsGroupedByThread) {
         List<Promise<Collection<U>>> allPromises = new ArrayList<>();
         for (final Collection<T> items : itemsGroupedByThread) {
-            Promise<Collection<U>> promise = mAwex.submit(new Work<Collection<U>>() {
+            Promise<Collection<U>> promise = mAwex.submit(new Task<Collection<U>>() {
                 @Override
                 protected Collection<U> run() throws InterruptedException {
                     return AbstractMultiThreadPromise.super.applyToCollection(items);

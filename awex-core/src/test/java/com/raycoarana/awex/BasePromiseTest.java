@@ -17,7 +17,7 @@ public class BasePromiseTest {
     @Mock
     protected Awex mAwex;
     @Mock
-    protected Work mWork;
+    protected Task mTask;
     @Mock
     protected UIThread mUIThread;
     @Mock
@@ -42,13 +42,13 @@ public class BasePromiseTest {
         doAnswer(new Answer<Promise>() {
             @Override
             public Promise answer(InvocationOnMock invocation) throws Throwable {
-                Work work = ((Work) invocation.getArguments()[0]);
-                work.initialize(mAwex);
-                work.markQueue();
-                work.execute();
-                return work.getPromise();
+                Task task = ((Task) invocation.getArguments()[0]);
+                task.initialize(mAwex);
+                task.markQueue();
+                task.execute();
+                return task.getPromise();
             }
-        }).when(mAwex).submit(isA(Work.class));
+        }).when(mAwex).submit(isA(Task.class));
 
         doAnswer(new Answer<Void>() {
             @Override
@@ -60,7 +60,7 @@ public class BasePromiseTest {
     }
 
     private void givenAWork() {
-        when(mWork.getId()).thenReturn(SOME_WORK_ID);
+        when(mTask.getId()).thenReturn(SOME_WORK_ID);
     }
 
     protected void givenThatUIThreadIsCurrentThread() {

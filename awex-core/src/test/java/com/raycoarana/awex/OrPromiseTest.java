@@ -74,7 +74,7 @@ public class OrPromiseTest extends BasePromiseTest {
 
         setUpPromises();
 
-        mMainPromise.cancelWork();
+        mMainPromise.cancelTask();
 
         assertTrue(mOrPromise.isCancelled());
     }
@@ -86,14 +86,14 @@ public class OrPromiseTest extends BasePromiseTest {
         setUpPromises();
 
         mMainPromise.reject(new Exception());
-        mSecondChoicePromise.cancelWork();
+        mSecondChoicePromise.cancelTask();
 
         assertTrue(mOrPromise.isCancelled());
     }
 
     private void setUpPromises() {
-        mMainPromise = new AwexPromise<>(mAwex, mWork);
-        mSecondChoicePromise = new AwexPromise<>(mAwex, mWork);
+        mMainPromise = new AwexPromise<>(mAwex, mTask);
+        mSecondChoicePromise = new AwexPromise<>(mAwex, mTask);
         mOrPromise = new OrPromise<>(mAwex, mMainPromise, mSecondChoicePromise);
     }
 

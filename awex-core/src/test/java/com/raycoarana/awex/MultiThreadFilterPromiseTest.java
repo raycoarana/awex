@@ -23,7 +23,7 @@ public class MultiThreadFilterPromiseTest extends BasePromiseTest {
     public void shouldFilterAResolvedPromiseWithCollection() throws Exception {
         setUpAwex();
 
-        mCollectionPromise = new AwexPromise<>(mAwex, mWork);
+        mCollectionPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mCollectionPromise.filterParallel(new Filter<Integer>() {
             @Override
@@ -42,7 +42,7 @@ public class MultiThreadFilterPromiseTest extends BasePromiseTest {
     public void shouldFilterAResolvedPromiseWithSingleValue() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mPromise.filterParallel(new Filter<Integer>() {
             @Override
@@ -60,7 +60,7 @@ public class MultiThreadFilterPromiseTest extends BasePromiseTest {
     public void shouldNotFilterAResolvedPromiseWithSingleValue() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mPromise.filterParallel(new Filter<Integer>() {
             @Override
@@ -78,7 +78,7 @@ public class MultiThreadFilterPromiseTest extends BasePromiseTest {
     public void shouldRejectFilteredPromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mPromise.filterParallel(new Filter<Integer>() {
             @Override
@@ -96,7 +96,7 @@ public class MultiThreadFilterPromiseTest extends BasePromiseTest {
     public void shouldCancelFilteredPromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mPromise.filterParallel(new Filter<Integer>() {
             @Override
@@ -105,7 +105,7 @@ public class MultiThreadFilterPromiseTest extends BasePromiseTest {
             }
         });
 
-        mPromise.cancelWork();
+        mPromise.cancelTask();
 
         assertEquals(Promise.STATE_CANCELLED, mFilteredValue.getState());
     }

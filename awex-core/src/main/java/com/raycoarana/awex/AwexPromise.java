@@ -17,13 +17,13 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Implementation of work promise
+ * Implementation of task promise
  */
 class AwexPromise<T> implements Promise<T> {
 
     protected final Awex mAwex;
 
-    private final Work mWork;
+    private final Task mTask;
     private final UIThread mUIThread;
     private final Logger mLogger;
     private final long mId;
@@ -41,10 +41,10 @@ class AwexPromise<T> implements Promise<T> {
         this(awex, null);
     }
 
-    public AwexPromise(Awex awex, Work work) {
+    public AwexPromise(Awex awex, Task task) {
         mAwex = awex;
-        mWork = work;
-        mId = mWork != null ? mWork.getId() : -1;
+        mTask = task;
+        mId = mTask != null ? mTask.getId() : -1;
         mUIThread = awex.provideUIThread();
         mLogger = awex.provideLogger();
         mState = STATE_PENDING;
@@ -204,12 +204,12 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public void cancelWork() {
-        cancelWork(false);
+    public void cancelTask() {
+        cancelTask(false);
     }
 
     @Override
-    public void cancelWork(final boolean mayInterrupt) {
+    public void cancelTask(final boolean mayInterrupt) {
         synchronized (this) {
             if (mState == STATE_PENDING) {
                 mState = STATE_CANCELLED;
@@ -232,8 +232,8 @@ class AwexPromise<T> implements Promise<T> {
 
     private void doCancel(boolean mayInterrupt) {
         synchronized (this) {
-            if (mWork != null) {
-                mAwex.cancel(mWork, mayInterrupt);
+            if (mTask != null) {
+                mAwex.cancel(mTask, mayInterrupt);
             }
             triggerAllCancel();
             clearCallbacks();
@@ -481,7 +481,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     private void printStateChanged(String newState) {
-        mLogger.v("Promise of work " + mId + " changed to state " + newState);
+        mLogger.v("Promise of task " + mId + " changed to state " + newState);
     }
 
     @SuppressWarnings("unchecked")

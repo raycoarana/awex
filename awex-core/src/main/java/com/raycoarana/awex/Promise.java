@@ -12,33 +12,33 @@ import java.util.Collection;
 public interface Promise<T> {
 
     /**
-     * State: Work associated with this promise is executing and did not finish already
+     * State: Task associated with this promise is executing and did not finish already
      */
     int STATE_PENDING = 0;
 
     /**
-     * State: Work associated with this promise has finish executing and have a result
+     * State: Task associated with this promise has finish executing and have a result
      */
     int STATE_RESOLVED = 1;
 
     /**
-     * State: Work associated with this promise has an error while executing
+     * State: Task associated with this promise has an error while executing
      */
     int STATE_REJECTED = 2;
 
     /**
-     * State: Work associated with this promise is cancelled
+     * State: Task associated with this promise is cancelled
      */
     int STATE_CANCELLED = 3;
 
     /**
-     * Cancels the work associated with the promise, no callbacks will be executed after the execution of this method
+     * Cancels the task associated with the promise, no callbacks will be executed after the execution of this method
      * and even dispatched callbacks to UI thread will be mark to be ignored. You could expect no side effects of any
      * callback after this call.
      */
-    void cancelWork();
+    void cancelTask();
 
-    void cancelWork(boolean mayInterrupt);
+    void cancelTask(boolean mayInterrupt);
 
     /**
      * Gets the current state of the promise
@@ -66,9 +66,9 @@ public interface Promise<T> {
      * Will block the current thread until the promise if resolved, rejected or cancelled. It will return
      * the value of the promise in case of resolved or throw an exception in any other case.
      *
-     * @return the result of the work if any
+     * @return the result of the task if any
      * @throws IllegalStateException if the state of the promise is STATE_CANCELLED
-     * @throws Exception             an exception if the work fails to execute
+     * @throws Exception             an exception if the task fails to execute
      */
     T getResult() throws Exception;
 
@@ -77,7 +77,7 @@ public interface Promise<T> {
      * the value of the promise in case of resolved or return the defaultValue in any other case.
      *
      * @param defaultValue default value to return in case that the promise was rejected or cancelled
-     * @return the result of the work if any
+     * @return the result of the task if any
      */
     T getResultOrDefault(T defaultValue) throws InterruptedException;
 

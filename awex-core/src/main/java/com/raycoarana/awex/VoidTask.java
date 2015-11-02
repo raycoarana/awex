@@ -1,17 +1,17 @@
 package com.raycoarana.awex;
 
 /**
- * Base class for works that doesn't returns any result.
+ * Base class for tasks that doesn't returns any result.
  *
- * @see Work
+ * @see Task
  */
-public abstract class VoidWork extends Work<Void> {
+public abstract class VoidTask extends Task<Void> {
 
-    public VoidWork() {
+    public VoidTask() {
         super();
     }
 
-    public VoidWork(int priority) {
+    public VoidTask(int priority) {
         super(priority);
     }
 

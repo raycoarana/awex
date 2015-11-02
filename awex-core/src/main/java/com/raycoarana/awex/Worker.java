@@ -4,12 +4,12 @@ class Worker implements Runnable {
 
     private final long mId;
     private final Thread mThread;
-    private final AwexWorkQueue mWorkQueue;
+    private final AwexTaskQueue mWorkQueue;
     private final Logger mLogger;
 
     private boolean mDie = false;
 
-    public Worker(long id, AwexWorkQueue workQueue, Logger logger) {
+    public Worker(long id, AwexTaskQueue workQueue, Logger logger) {
         mId = id;
         mThread = new Thread(this, "Awex worker " + id);
         mWorkQueue = workQueue;
@@ -24,11 +24,11 @@ class Worker implements Runnable {
         try {
             while (!mDie) {
                 try {
-                    Work<?> work = mWorkQueue.take();
-                    if (work != null) {
-                        mLogger.v("Worker " + mId + " start executing work " + work.getId());
-                        work.execute();
-                        mLogger.v("Worker " + mId + " ends executing work " + work.getId());
+                    Task<?> task = mWorkQueue.take();
+                    if (task != null) {
+                        mLogger.v("Worker " + mId + " start executing task " + task.getId());
+                        task.execute();
+                        mLogger.v("Worker " + mId + " ends executing task " + task.getId());
                     }
                 } catch (InterruptedException ex) {
                     return;

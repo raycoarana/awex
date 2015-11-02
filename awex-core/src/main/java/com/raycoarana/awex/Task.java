@@ -1,14 +1,14 @@
 package com.raycoarana.awex;
 
 /**
- * Base class for any work that will create some object as a result. Make sure you implement a safe way to cancel this
- * work when the state is changed to STATE_CANCELLING. Works will have some minor time to successfully exit before
+ * Base class for any task that will create some object as a result. Make sure you implement a safe way to cancel this
+ * task when the state is changed to STATE_CANCELLING. Tasks will have some minor time to successfully exit before
  * a more aggressive cancel will be tried (interrupting the thread). You should not catch any InterruptedException
- * and let it abort the work, just do whatever you need to safely abort the work.
+ * and let it abort the task, just do whatever you need to safely abort the task.
  *
- * @see VoidWork for works that doesn't returns any object
+ * @see VoidTask for tasks that doesn't returns any object
  */
-public abstract class Work<T> {
+public abstract class Task<T> {
 
     public static final int STATE_NOT_INITIALIZED = -1;
     public static final int STATE_NOT_QUEUE = 0;
@@ -31,17 +31,17 @@ public abstract class Work<T> {
     private AwexPromise<T> mPromise;
     private int mCurrentState = STATE_NOT_INITIALIZED;
 
-    public Work() {
+    public Task() {
         this(PRIORITY_NORMAL);
     }
 
-    public Work(int priority) {
+    public Task(int priority) {
         mPriority = priority;
     }
 
     void initialize(Awex awex) {
         if (mCurrentState != STATE_NOT_INITIALIZED) {
-            throw new IllegalStateException("Trying to reuse an already submitted work");
+            throw new IllegalStateException("Trying to reuse an already submitted task");
         }
 
         mId = awex.provideWorkId();
@@ -66,9 +66,13 @@ public abstract class Work<T> {
         return mCurrentState;
     }
 
+    public boolean isCancelled() {
+        return mCurrentState == STATE_CANCELLED;
+    }
+
     public void reset() {
         if (mCurrentState != STATE_FINISHED) {
-            throw new IllegalStateException("Trying to reuse an already submitted work");
+            throw new IllegalStateException("Trying to reuse an already submitted task");
         }
     }
 
@@ -79,7 +83,7 @@ public abstract class Work<T> {
 
     private void checkInitialized() {
         if (mCurrentState == STATE_NOT_INITIALIZED) {
-            throw new IllegalStateException("Work not already initialized, before calling this method ensure this work is submitted");
+            throw new IllegalStateException("Task not already initialized, before calling this method ensure this task is submitted");
         }
     }
 
@@ -127,6 +131,6 @@ public abstract class Work<T> {
     }
 
     private void printStateChanged(String newState) {
-        mLogger.v("Work " + mId + " state changed to " + newState);
+        mLogger.v("Task " + mId + " state changed to " + newState);
     }
 }

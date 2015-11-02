@@ -60,7 +60,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldCreateAValidPromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
         assertEquals(Promise.STATE_PENDING, mPromise.getState());
     }
@@ -69,8 +69,8 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldFailToGetResultOfCancelledPromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancelWork();
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.cancelTask();
         mPromise.getResult();
     }
 
@@ -78,8 +78,8 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldReturnDefaultValueWhenGetResultOrDefaultOfCancelledPromise() throws InterruptedException {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancelWork();
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.cancelTask();
         assertEquals(SOME_DEFAULT_RESULT, mPromise.getResultOrDefault(SOME_DEFAULT_RESULT));
     }
 
@@ -87,7 +87,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldResolveThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.resolve(SOME_RESULT);
 
         assertEquals(Promise.STATE_RESOLVED, mPromise.getState());
@@ -99,7 +99,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldFailToResolveTwiceThePromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.resolve(SOME_RESULT);
         mPromise.resolve(SOME_RESULT);
     }
@@ -108,7 +108,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteDoneCallbackAddedBeforeResolveThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.done(mDoneCallback)
                 .always(mAlwaysCallback);
         mPromise.resolve(SOME_RESULT);
@@ -121,7 +121,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteDoneCallbackAddedAfterResolveThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.resolve(SOME_RESULT);
         mPromise.done(mDoneCallback)
                 .always(mAlwaysCallback);
@@ -134,7 +134,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteUIDoneCallbackAddedBeforeResolveThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.done(mUIDoneCallback)
                 .always(mUIAlwaysCallback);
         mPromise.resolve(SOME_RESULT);
@@ -149,7 +149,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
         givenThatUIThreadIsCurrentThread();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.resolve(SOME_RESULT);
         mPromise.done(mUIDoneCallback)
                 .always(mUIAlwaysCallback);
@@ -165,7 +165,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
         givenThatUIThreadIsCurrentThread();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.resolve(SOME_RESULT);
         mPromise.done(mDoneCallback)
                 .always(mAlwaysCallback);
@@ -180,7 +180,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteUIDoneCallbackAddedAfterResolveThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.resolve(SOME_RESULT);
         mPromise.done(mUIDoneCallback)
                 .always(mUIAlwaysCallback);
@@ -194,7 +194,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldContinueExecutingOtherDoneCallbacksWhenACallbackFails() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.done(buildFailingDoneCallback());
         mPromise.done(mDoneCallback);
         mPromise.resolve(SOME_RESULT);
@@ -214,7 +214,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldContinueExecutingOtherAlwaysCallbacksWhenACallbackFails() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.always(buildFailingAlwaysCallback());
         mPromise.always(mAlwaysCallback);
         mPromise.resolve(SOME_RESULT);
@@ -234,7 +234,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteFailCallbackAddedBeforeRejectThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.fail(mFailCallback)
                 .always(mAlwaysCallback);
         mPromise.reject(REJECT_EXCEPTION);
@@ -247,7 +247,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteFailCallbackAddedAfterRejectThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.reject(REJECT_EXCEPTION);
         mPromise.fail(mFailCallback)
                 .always(mAlwaysCallback);
@@ -260,7 +260,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteUIFailCallbackAddedBeforeRejectThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.fail(mUIFailCallback)
                 .always(mUIAlwaysCallback);
         mPromise.reject(REJECT_EXCEPTION);
@@ -274,7 +274,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteUIFailCallbackAddedAfterRejectThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.reject(REJECT_EXCEPTION);
         mPromise.fail(mUIFailCallback)
                 .always(mUIAlwaysCallback);
@@ -288,7 +288,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldContinueExecutingOtherFailCallbacksWhenACallbackFails() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.fail(buildFailingFailCallback());
         mPromise.fail(mFailCallback);
         mPromise.reject(new RuntimeException());
@@ -308,7 +308,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
         givenThatUIThreadIsCurrentThread();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.reject(new RuntimeException());
         mPromise.fail(mFailCallback)
                 .always(mAlwaysCallback);
@@ -323,7 +323,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldRejectThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.reject(new IndexOutOfBoundsException());
 
         assertEquals(Promise.STATE_REJECTED, mPromise.getState());
@@ -334,7 +334,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldFailToRejectTwiceThePromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.reject(new IndexOutOfBoundsException());
         mPromise.reject(new IndexOutOfBoundsException());
     }
@@ -343,7 +343,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldGetDefaultValueWhenPromiseIsRejected() throws InterruptedException {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.reject(new IndexOutOfBoundsException());
 
         assertEquals(SOME_DEFAULT_RESULT, mPromise.getResultOrDefault(SOME_DEFAULT_RESULT));
@@ -353,9 +353,9 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteCancelCallbackWhenCancelPromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.cancel(mCancelCallback);
-        mPromise.cancelWork();
+        mPromise.cancelTask();
 
         verify(mCancelCallback).onCancel();
     }
@@ -364,8 +364,8 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteCancelCallbackAfterCancelPromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancelWork();
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.cancelTask();
         mPromise.cancel(mCancelCallback);
 
         verify(mCancelCallback).onCancel();
@@ -375,10 +375,10 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldContinueExecutingOtherCancelCallbacksWhenACallbackFails() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.cancel(buildFailingCancelCallback());
         mPromise.cancel(mCancelCallback);
-        mPromise.cancelWork();
+        mPromise.cancelTask();
 
         verify(mCancelCallback).onCancel();
         verify(mLogger).e(anyString(), any(Exception.class));
@@ -394,9 +394,9 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldExecuteUICancelCallbackWhenCancelPromise() {
         setUpAwex();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.cancel(mUICancelCallback);
-        mPromise.cancelWork();
+        mPromise.cancelTask();
 
         verify(mUIThread).post(any(Runnable.class));
         verify(mUICancelCallback).onCancel();
@@ -407,9 +407,9 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
         givenThatUIThreadIsCurrentThread();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
+        mPromise = new AwexPromise<>(mAwex, mTask);
         mPromise.cancel(mCancelCallback);
-        mPromise.cancelWork();
+        mPromise.cancelTask();
 
         verify(mUIThread, never()).post(any(Runnable.class));
         verify(mAwex).submit(any(Runnable.class));
@@ -421,8 +421,8 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
         givenThatUIThreadIsCurrentThread();
 
-        mPromise = new AwexPromise<>(mAwex, mWork);
-        mPromise.cancelWork();
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.cancelTask();
         mPromise.cancel(mCancelCallback);
 
         verify(mUIThread, never()).post(any(Runnable.class));

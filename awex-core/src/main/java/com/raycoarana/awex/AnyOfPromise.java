@@ -65,7 +65,7 @@ class AnyOfPromise<T> extends AwexPromise<T> {
             public void onCancel() {
                 synchronized (AnyOfPromise.this) {
                     if (getState() == STATE_PENDING) {
-                        cancelWork(false);
+                        cancelTask(false);
                     }
                 }
             }
@@ -73,12 +73,12 @@ class AnyOfPromise<T> extends AwexPromise<T> {
     }
 
     @Override
-    public void cancelWork(boolean mayInterrupt) {
+    public void cancelTask(boolean mayInterrupt) {
         synchronized (this) {
-            super.cancelWork(mayInterrupt);
+            super.cancelTask(mayInterrupt);
 
             for (Promise<T> promise : mPromises) {
-                promise.cancelWork(mayInterrupt);
+                promise.cancelTask(mayInterrupt);
             }
         }
     }

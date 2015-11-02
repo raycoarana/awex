@@ -1,7 +1,5 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.exceptions.AllFailException;
-
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -61,14 +59,14 @@ public class AllOfPromiseTest extends BasePromiseTest {
 
         setUpPromises();
 
-        mSecondPromise.cancelWork();
+        mSecondPromise.cancelTask();
 
         assertTrue(mAllOfPromise.isCancelled());
     }
 
     private void setUpPromises() {
-        mFirstPromise = new AwexPromise<>(mAwex, mWork);
-        mSecondPromise = new AwexPromise<>(mAwex, mWork);
+        mFirstPromise = new AwexPromise<>(mAwex, mTask);
+        mSecondPromise = new AwexPromise<>(mAwex, mTask);
         mAllOfPromise = new AllOfPromise<>(mAwex,
                 Arrays.<Promise<Integer>>asList(mFirstPromise, mSecondPromise));
     }

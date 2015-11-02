@@ -16,7 +16,7 @@ public class Awex {
     private final UIThread mUIThread;
     private final Logger mLogger;
     private final AtomicLong mWorkIdProvider = new AtomicLong();
-    private final AwexWorkQueue mWorkQueue;
+    private final AwexTaskQueue mWorkQueue;
     private final Set<Worker> mWorkers;
     private final int mMinThreads;
     private final int mMaxThreads;
@@ -28,7 +28,7 @@ public class Awex {
     public Awex(UIThread uiThread, Logger logger, int minThreads, int maxThreads) {
         mUIThread = uiThread;
         mLogger = logger;
-        mWorkQueue = new AwexWorkQueue();
+        mWorkQueue = new AwexTaskQueue();
         mWorkers = new HashSet<>(maxThreads);
         mMinThreads = minThreads;
         mMaxThreads = maxThreads;
@@ -64,24 +64,24 @@ public class Awex {
         return mWorkIdProvider.incrementAndGet();
     }
 
-    public <T> Promise<T> submit(final Work<T> work) {
+    public <T> Promise<T> submit(final Task<T> task) {
         synchronized (this) {
-            work.initialize(this);
-            work.markQueue();
+            task.initialize(this);
+            task.markQueue();
             if (mWorkQueue.waiters() == 0 && mWorkers.size() < mMaxThreads) {
                 createNewWorker();
             }
-            mWorkQueue.insert(work);
+            mWorkQueue.insert(task);
         }
-        return work.getPromise();
+        return task.getPromise();
     }
 
     void submit(Runnable runnable) {
         mCallbackExecutor.submit(runnable);
     }
 
-    public <T> void cancel(Work<T> work, boolean mayInterrupt) {
-        work.softCancel();
+    public <T> void cancel(Task<T> task, boolean mayInterrupt) {
+        task.softCancel();
         if (mayInterrupt) {
             //TODO: get thread, extract from thread pool and interrupt.
             // Create a new thread if we are below minimum threads

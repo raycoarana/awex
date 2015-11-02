@@ -34,7 +34,7 @@ abstract class AbstractSingleThreadPromise<T, U> extends AwexPromise<Collection<
         }).cancel(new CancelCallback() {
             @Override
             public void onCancel() {
-                AbstractSingleThreadPromise.this.cancelWork();
+                AbstractSingleThreadPromise.this.cancelTask();
             }
         });
     }
