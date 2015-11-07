@@ -88,6 +88,9 @@ class AwexPromise<T> implements Promise<T> {
      */
     public void reject(Exception ex) {
         synchronized (this) {
+            if (mState == STATE_CANCELLED) {
+                return;
+            }
             validateInPendingState();
 
             mState = STATE_REJECTED;

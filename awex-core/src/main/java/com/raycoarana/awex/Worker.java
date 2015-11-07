@@ -24,7 +24,7 @@ class Worker implements Runnable {
         try {
             while (!mDie) {
                 try {
-                    Task<?> task = mWorkQueue.take();
+                    Task<?> task = mWorkQueue.take(this);
                     if (task != null) {
                         mLogger.v("Worker " + mId + " start executing task " + task.getId());
                         task.execute();
@@ -39,11 +39,8 @@ class Worker implements Runnable {
         }
     }
 
-    public void die() {
-        mDie = true;
-    }
-
     public void interrupt() {
+        mDie = true;
         mThread.interrupt();
     }
 

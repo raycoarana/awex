@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromise<T, U> {
+class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromise<T, U> {
 
     @SuppressWarnings("unchecked")
     public AbstractMultiThreadPromise(Awex awex, Promise promise, Apply<T, U> filter) {

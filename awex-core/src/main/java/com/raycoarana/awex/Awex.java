@@ -81,10 +81,15 @@ public class Awex {
     }
 
     public <T> void cancel(Task<T> task, boolean mayInterrupt) {
-        task.softCancel();
-        if (mayInterrupt) {
-            //TODO: get thread, extract from thread pool and interrupt.
-            // Create a new thread if we are below minimum threads
+        synchronized (this) {
+            task.softCancel();
+            if (!mWorkQueue.remove(task) && mayInterrupt) {
+                Worker worker = task.getWorker();
+                if (worker != null) {
+                    mWorkers.remove(worker);
+                    worker.interrupt();
+                }
+            }
         }
     }
 

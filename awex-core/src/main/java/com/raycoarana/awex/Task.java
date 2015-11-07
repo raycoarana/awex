@@ -1,5 +1,7 @@
 package com.raycoarana.awex;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Base class for any task that will create some object as a result. Make sure you implement a safe way to cancel this
  * task when the state is changed to STATE_CANCELLING. Tasks will have some minor time to successfully exit before
@@ -30,6 +32,7 @@ public abstract class Task<T> {
     private long mId;
     private AwexPromise<T> mPromise;
     private int mCurrentState = STATE_NOT_INITIALIZED;
+    private Worker mWorker;
 
     public Task() {
         this(PRIORITY_NORMAL);
@@ -67,13 +70,21 @@ public abstract class Task<T> {
     }
 
     public boolean isCancelled() {
-        return mCurrentState == STATE_CANCELLED;
+        return mCurrentState == STATE_CANCELLING || mCurrentState == STATE_CANCELLED;
     }
 
     public void reset() {
         if (mCurrentState != STATE_FINISHED) {
             throw new IllegalStateException("Trying to reuse an already submitted task");
         }
+        mCurrentState = STATE_NOT_INITIALIZED;
+        onReset();
+    }
+
+    /**
+     * Override this method to reset any state of the task prior to reuse it
+     */
+    protected void onReset() {
     }
 
     public Promise<T> getPromise() {
@@ -89,19 +100,17 @@ public abstract class Task<T> {
 
     protected abstract T run() throws InterruptedException;
 
+    ReentrantLock lock = new ReentrantLock();
+
     final void execute() throws InterruptedException {
         checkInitialized();
 
         mCurrentState = STATE_RUNNING;
         printStateChanged("RUNNING");
+
+        T result = null;
         try {
-            T result = run();
-            if (mCurrentState == STATE_CANCELLING) {
-                mCurrentState = STATE_CANCELLED;
-                printStateChanged("CANCELLED");
-                return;
-            }
-            mPromise.resolve(result);
+            result = run();
         } catch (InterruptedException ex) {
             if (mPromise.isCancelled()) {
                 mCurrentState = STATE_CANCELLED;
@@ -112,15 +121,41 @@ public abstract class Task<T> {
         } catch (Exception ex) {
             mPromise.reject(ex);
         }
-        mCurrentState = STATE_FINISHED;
-        printStateChanged("FINISHED");
+
+        resolveWithResult(result);
+    }
+
+    private void resolveWithResult(T result) {
+        try {
+            lock.lock();
+
+            if (mPromise.isPending()) {
+                mPromise.resolve(result);
+            }
+
+            if (mCurrentState == STATE_CANCELLING) {
+                mCurrentState = STATE_CANCELLED;
+                printStateChanged("CANCELLED");
+                return;
+            }
+            mCurrentState = STATE_FINISHED;
+            printStateChanged("FINISHED");
+        } finally {
+            mWorker = null;
+            lock.unlock();
+        }
     }
 
     final void softCancel() {
-        checkInitialized();
+        try {
+            lock.lock();
+            checkInitialized();
 
-        mCurrentState = STATE_CANCELLING;
-        printStateChanged("CANCELLING");
+            mCurrentState = STATE_CANCELLING;
+            printStateChanged("CANCELLING");
+        } finally {
+            lock.unlock();
+        }
     }
 
     final void markQueue() {
@@ -132,5 +167,13 @@ public abstract class Task<T> {
 
     private void printStateChanged(String newState) {
         mLogger.v("Task " + mId + " state changed to " + newState);
+    }
+
+    Worker getWorker() {
+        return mWorker;
+    }
+
+    void setWorker(Worker worker) {
+        mWorker = worker;
     }
 }

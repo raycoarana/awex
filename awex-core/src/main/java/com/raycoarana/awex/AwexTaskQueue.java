@@ -14,21 +14,26 @@ class AwexTaskQueue {
         mTaskQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY, new TaskPriorityComparator());
     }
 
-    public void insert(Task task) {
-        mTaskQueue.offer(task);
-    }
-
-    public Task take() throws InterruptedException {
+    public synchronized Task take(Worker worker) throws InterruptedException {
         try {
             mWaitersCount.incrementAndGet();
-            return mTaskQueue.take();
+            Task task =  mTaskQueue.take();
+            task.setWorker(worker);
+            return task;
         } finally {
             mWaitersCount.decrementAndGet();
         }
     }
 
+    public void insert(Task task) {
+        mTaskQueue.offer(task);
+    }
+
+    public synchronized <T> boolean remove(Task<T> task) {
+        return mTaskQueue.remove(task);
+    }
+
     public int waiters() {
         return mWaitersCount.get();
     }
-
 }
