@@ -4,10 +4,12 @@ import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
+import com.raycoarana.awex.callbacks.ProgressCallback;
 import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
+import com.raycoarana.awex.callbacks.UIProgressCallback;
 
 import org.junit.Test;
 import org.mockito.Mock;
@@ -26,6 +28,7 @@ public class AwexPromiseTest extends BasePromiseTest {
 
     private static final Integer SOME_RESULT = 666;
     private static final Integer SOME_DEFAULT_RESULT = 999;
+    private static final float SOME_PROGRESS = 0.6f;
 
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private static final Exception REJECT_EXCEPTION = new Exception();
@@ -40,16 +43,22 @@ public class AwexPromiseTest extends BasePromiseTest {
     private FailCallback mFailCallback;
 
     @Mock
-    private CancelCallback mCancelCallback;
+    private UIFailCallback mUIFailCallback;
 
     @Mock
-    private UIFailCallback mUIFailCallback;
+    private ProgressCallback mProgressCallback;
+
+    @Mock
+    private UIProgressCallback mUIProgressCallback;
 
     @Mock
     private AlwaysCallback mAlwaysCallback;
 
     @Mock
     private UIAlwaysCallback mUIAlwaysCallback;
+
+    @Mock
+    private CancelCallback mCancelCallback;
 
     @Mock
     private UICancelCallback mUICancelCallback;
@@ -428,6 +437,59 @@ public class AwexPromiseTest extends BasePromiseTest {
         verify(mUIThread, never()).post(any(Runnable.class));
         verify(mAwex).submit(any(Runnable.class));
         verify(mCancelCallback).onCancel();
+    }
+
+    @Test
+    public void shouldExecuteProgressCallback() {
+        setUpAwex();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.progress(mProgressCallback);
+        mPromise.notifyProgress(SOME_PROGRESS);
+
+        verify(mProgressCallback).onProgress(SOME_PROGRESS);
+    }
+
+    @Test
+    public void shouldExecuteASecondProgressCallbackWhenFirstProgressCallbackFails() {
+        setUpAwex();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.progress(new ProgressCallback() {
+            @Override
+            public void onProgress(float progress) {
+                throw new RuntimeException("Some error!");
+            }
+        });
+        mPromise.progress(mProgressCallback);
+        mPromise.notifyProgress(SOME_PROGRESS);
+
+        verify(mProgressCallback).onProgress(SOME_PROGRESS);
+    }
+
+    @Test
+    public void shouldExecuteProgressCallbackInUIThread() {
+        setUpAwex();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.progress(mUIProgressCallback);
+        mPromise.notifyProgress(SOME_PROGRESS);
+
+        verify(mUIThread).post(any(Runnable.class));
+        verify(mUIProgressCallback).onProgress(SOME_PROGRESS);
+    }
+
+    @Test
+    public void shouldExecuteProgressCallbackInCurrentThreadIsUIThreadIsCurrentThread() {
+        setUpAwex();
+        givenThatUIThreadIsCurrentThread();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise.progress(mUIProgressCallback);
+        mPromise.notifyProgress(SOME_PROGRESS);
+
+        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mUIProgressCallback).onProgress(SOME_PROGRESS);
     }
 
 }

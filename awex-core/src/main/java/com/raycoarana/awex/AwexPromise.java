@@ -4,10 +4,12 @@ import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
+import com.raycoarana.awex.callbacks.ProgressCallback;
 import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
+import com.raycoarana.awex.callbacks.UIProgressCallback;
 import com.raycoarana.awex.transform.Filter;
 import com.raycoarana.awex.transform.Mapper;
 
@@ -34,6 +36,7 @@ class AwexPromise<T> implements Promise<T> {
 
     private List<DoneCallback<T>> mDoneCallbacks = new ArrayList<>();
     private List<FailCallback> mFailCallbacks = new ArrayList<>();
+    private List<ProgressCallback> mProgressCallbacks = new ArrayList<>();
     private List<CancelCallback> mCancelCallbacks = new ArrayList<>();
     private List<AlwaysCallback> mAlwaysCallbacks = new ArrayList<>();
 
@@ -81,43 +84,6 @@ class AwexPromise<T> implements Promise<T> {
         }
     }
 
-    /**
-     * Rejects the promise, trigers any fail/always callbacks
-     *
-     * @param ex exception that represents the rejection of the promise
-     */
-    public void reject(Exception ex) {
-        synchronized (this) {
-            if (mState == STATE_CANCELLED) {
-                return;
-            }
-            validateInPendingState();
-
-            mState = STATE_REJECTED;
-            printStateChanged("REJECTED");
-            mException = ex;
-            if (mFailCallbacks.size() > 0 || mAlwaysCallbacks.size() > 0) {
-                mAwex.submit(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        triggerAllFails();
-                        triggerAllAlways();
-                        clearCallbacks();
-                    }
-
-                });
-            } else {
-                clearCallbacks();
-            }
-        }
-    }
-
-    private void validateInPendingState() {
-        if (mState != STATE_PENDING) {
-            throw new IllegalStateException("Illegal promise state for this operation");
-        }
-    }
 
     private void triggerAllDones() {
         synchronized (this) {
@@ -145,6 +111,38 @@ class AwexPromise<T> implements Promise<T> {
             callback.onDone(result);
         } catch (Exception ex) {
             mLogger.e("Error when trigger done callback", ex);
+        }
+    }
+
+    /**
+     * Rejects the promise, triggers any fail/always callbacks
+     *
+     * @param ex exception that represents the rejection of the promise
+     */
+    public void reject(Exception ex) {
+        synchronized (this) {
+            if (mState == STATE_CANCELLED) {
+                return;
+            }
+            validateInPendingState();
+
+            mState = STATE_REJECTED;
+            printStateChanged("REJECTED");
+            mException = ex;
+            if (mFailCallbacks.size() > 0 || mAlwaysCallbacks.size() > 0) {
+                mAwex.submit(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        triggerAllFails();
+                        triggerAllAlways();
+                        clearCallbacks();
+                    }
+
+                });
+            } else {
+                clearCallbacks();
+            }
         }
     }
 
@@ -203,6 +201,55 @@ class AwexPromise<T> implements Promise<T> {
             callback.onAlways();
         } catch (Exception ex) {
             mLogger.e("Error when trigger always callback", ex);
+        }
+    }
+
+    /**
+     * Notify progress to all callbacks
+     * @param progress amount of progress
+     */
+    public void notifyProgress(float progress) {
+        synchronized (this) {
+            validateInPendingState();
+
+            mLogger.v("Promise of task " + mId + " progress to " + progress);
+
+            if (mProgressCallbacks.size() > 0) {
+                triggerAllProgress(progress);
+            }
+        }
+    }
+
+    private void triggerAllProgress(float progress) {
+        for (final ProgressCallback callback : mProgressCallbacks) {
+            triggerProgress(callback, progress);
+        }
+    }
+
+    private void triggerProgress(final ProgressCallback callback, final float progress) {
+        if (callback instanceof UIProgressCallback && !mUIThread.isCurrentThread()) {
+            mUIThread.post(new CancellableRunnable() {
+                @Override
+                public void execute() {
+                    tryTrigger(callback, progress);
+                }
+            });
+        } else {
+            tryTrigger(callback, progress);
+        }
+    }
+
+    private void tryTrigger(ProgressCallback callback, float progress) {
+        try {
+            callback.onProgress(progress);
+        } catch (Exception ex) {
+            mLogger.e("Error when trigger done callback", ex);
+        }
+    }
+
+    private void validateInPendingState() {
+        if (mState != STATE_PENDING) {
+            throw new IllegalStateException("Illegal promise state for this operation");
         }
     }
 
@@ -273,6 +320,7 @@ class AwexPromise<T> implements Promise<T> {
     private void clearCallbacks() {
         mDoneCallbacks.clear();
         mFailCallbacks.clear();
+        mProgressCallbacks.clear();
         mCancelCallbacks.clear();
         mAlwaysCallbacks.clear();
 
@@ -411,6 +459,18 @@ class AwexPromise<T> implements Promise<T> {
 
     private boolean shouldExecuteInBackground(FailCallback callback) {
         return mUIThread.isCurrentThread() && !(callback instanceof UIFailCallback);
+    }
+
+    @Override
+    public Promise<T> progress(final ProgressCallback callback) {
+        synchronized (this) {
+            switch (mState) {
+                case STATE_PENDING:
+                    mProgressCallbacks.add(callback);
+                    break;
+            }
+        }
+        return this;
     }
 
     @Override

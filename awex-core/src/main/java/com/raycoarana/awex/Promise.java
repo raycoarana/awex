@@ -4,6 +4,7 @@ import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
+import com.raycoarana.awex.callbacks.ProgressCallback;
 import com.raycoarana.awex.transform.Filter;
 import com.raycoarana.awex.transform.Mapper;
 
@@ -84,6 +85,8 @@ public interface Promise<T> {
     Promise<T> done(DoneCallback<T> callback);
 
     Promise<T> fail(FailCallback callback);
+
+    Promise<T> progress(ProgressCallback callback);
 
     Promise<T> cancel(CancelCallback callback);
 

@@ -225,7 +225,7 @@ public class AwexTest {
         mAwex.submit(someTask);
         someTask.getPromise().getResult();
 
-        assertEquals(Task.STATE_FINISHED, someTask.getState());
+        assertEquals(Promise.STATE_RESOLVED, someTask.getPromise().getState());
     }
 
     private void setUpAwex() {

@@ -80,6 +80,12 @@ awex.submit(someTask)
             //Task fails
         }
     })
+    .progress(new ProgressCallback() {
+        @Override
+        public void onProgress(float progress) {
+            //Task done some progress
+        }
+    })
     .always(new AlwaysCallback() {
         @Override
         public void onAlways() {
@@ -102,6 +108,12 @@ awex.submit(someTask)
         @Override
         public void onFail(Exception exception) {
             view.showError(); //Can't get the value, show the error message
+        }
+    })
+    .progress(new UIProgressCallback() {
+        @Override
+        public void onProgress(float progress) {
+            view.updateProgress(progress);
         }
     })
     .always(new UIAlwaysCallback() {
@@ -160,6 +172,14 @@ public void onCreate() {
 public void onDestroy() {
     //On destroy, ensure any pending task is cancelled
     mPromise.cancelTask();
+}
+```
+
+Tasks and promises could also be cancelled interrupting the worker thread. In that case, the thread will be removed from the thread pool and interrupted. A new thread will be created in the thread pool as soon as a new task is submitted.
+
+```java
+public void onCancelSave() {
+    mPromise.cancelTask(/* mayInterrupt */true); //Tries to abort the worker thread
 }
 ```
 

@@ -74,11 +74,17 @@ public abstract class Task<T> {
     }
 
     public void reset() {
-        if (mCurrentState != STATE_FINISHED) {
-            throw new IllegalStateException("Trying to reuse an already submitted task");
+        try {
+            lock.lock();
+
+            if (mCurrentState != STATE_FINISHED) {
+                throw new IllegalStateException("Trying to reuse an already submitted task");
+            }
+            mCurrentState = STATE_NOT_INITIALIZED;
+            onReset();
+        } finally {
+            lock.unlock();
         }
-        mCurrentState = STATE_NOT_INITIALIZED;
-        onReset();
     }
 
     /**
