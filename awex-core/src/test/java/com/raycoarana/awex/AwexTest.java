@@ -228,6 +228,68 @@ public class AwexTest {
         assertEquals(Promise.STATE_RESOLVED, someTask.getPromise().getState());
     }
 
+    @Test(timeout = 1000)
+    public void shouldExecuteAsRealTimeWhenAllThreadsBusy() throws Exception {
+        setUpAwex();
+
+        final Semaphore semaphore = new Semaphore(0);
+        VoidTask someWaitingTask = new VoidTask() {
+            @Override
+            protected void runWithoutResult() throws InterruptedException {
+                semaphore.acquire();
+            }
+        };
+
+        VoidTask realTimeTask = new VoidTask(Task.PRIORITY_REAL_TIME) {
+            @Override
+            protected void runWithoutResult() throws InterruptedException {
+
+            }
+        };
+
+        Promise<Void> waitingPromise = mAwex.submit(someWaitingTask);
+        Promise<Void> realTimePromise = mAwex.submit(realTimeTask);
+
+        realTimePromise.getResult();
+
+        semaphore.release();
+        waitingPromise.getResult();
+    }
+
+    @Test(timeout = 1000)
+    public void shouldExecuteAsRealTimeWhenWorkQueueHasQueuedTasks() throws Exception {
+        setUpAwex();
+
+        final Semaphore semaphore = new Semaphore(0);
+        VoidTask someWaitingTask = new VoidTask() {
+            @Override
+            protected void runWithoutResult() throws InterruptedException {
+                semaphore.acquire();
+            }
+        };
+
+        VoidTask realTimeTask = new VoidTask(Task.PRIORITY_REAL_TIME) {
+            @Override
+            protected void runWithoutResult() throws InterruptedException {
+
+            }
+        };
+
+        Promise<Void> waitingPromise = mAwex.submit(someWaitingTask);
+        mAwex.submit(new VoidTask() {
+            @Override
+            protected void runWithoutResult() throws InterruptedException {
+
+            }
+        });
+        Promise<Void> realTimePromise = mAwex.submit(realTimeTask);
+
+        realTimePromise.getResult();
+
+        semaphore.release();
+        waitingPromise.getResult();
+    }
+
     private void setUpAwex() {
         mAwex = new Awex(mUIThread, new ConsoleLogger(), 1, 1);
     }

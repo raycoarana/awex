@@ -36,4 +36,8 @@ class AwexTaskQueue {
     public int waiters() {
         return mWaitersCount.get();
     }
+
+    public int size() {
+        return mTaskQueue.size();
+    }
 }

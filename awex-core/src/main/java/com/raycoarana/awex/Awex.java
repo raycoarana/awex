@@ -68,10 +68,16 @@ public class Awex {
         synchronized (this) {
             task.initialize(this);
             task.markQueue();
-            if (mWorkQueue.waiters() == 0 && mWorkers.size() < mMaxThreads) {
-                createNewWorker();
+
+            boolean isRealTimeTask = task.getPriority() == Task.PRIORITY_REAL_TIME;
+            if (isRealTimeTask && (mWorkQueue.size() != 0 || mWorkQueue.waiters() == 0)) {
+                new RealTimeWorker(mThreadIdProvider.incrementAndGet(), task, mLogger);
+            } else {
+                if (mWorkQueue.waiters() == 0 && mWorkers.size() < mMaxThreads) {
+                    createNewWorker();
+                }
+                mWorkQueue.insert(task);
             }
-            mWorkQueue.insert(task);
         }
         return task.getPromise();
     }
