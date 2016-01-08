@@ -6,24 +6,18 @@ import com.raycoarana.awex.callbacks.FailCallback;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
-abstract class AbstractSingleThreadPromise<T, U> extends AwexPromise<Collection<U>> {
+abstract class AbstractSingleThreadPromise<T, U> extends AwexCollectionPromise<U> {
 
     protected final Apply<T, U> mApply;
 
-    public interface Apply<T, U> {
-        U apply(T item);
-    }
-
-    @SuppressWarnings("unchecked")
-    public AbstractSingleThreadPromise(Awex awex, Promise promise, Apply<T, U> apply) {
+    public AbstractSingleThreadPromise(Awex awex, CollectionPromise<T> promise, Apply<T, U> apply) {
         super(awex);
 
         mApply = apply;
-        promise.done(new DoneCallback() {
+        promise.done(new DoneCallback<Collection<T>>() {
             @Override
-            public void onDone(Object result) {
+            public void onDone(Collection<T> result) {
                 AbstractSingleThreadPromise.this.apply(result);
             }
         }).fail(new FailCallback() {
@@ -39,16 +33,7 @@ abstract class AbstractSingleThreadPromise<T, U> extends AwexPromise<Collection<
         });
     }
 
-    @SuppressWarnings("unchecked")
-    private void apply(Object item) {
-        if (item instanceof Iterable) {
-            applyToCollectionAndResolve((Iterable<T>) item);
-        } else {
-            applyToSingleAndResolve((T) item);
-        }
-    }
-
-    protected void applyToCollectionAndResolve(Iterable<T> items) {
+    protected void apply(Collection<T> items) {
         Collection<U> results = applyToCollection(items);
         resolve(results);
     }
@@ -62,17 +47,6 @@ abstract class AbstractSingleThreadPromise<T, U> extends AwexPromise<Collection<
             }
         }
         return results;
-    }
-
-    private void applyToSingleAndResolve(T item) {
-        Collection<U> results;
-        U result = mApply.apply(item);
-        if (result != null) {
-            results = Collections.singletonList(result);
-        } else {
-            results = Collections.emptyList();
-        }
-        resolve(results);
     }
 
 }

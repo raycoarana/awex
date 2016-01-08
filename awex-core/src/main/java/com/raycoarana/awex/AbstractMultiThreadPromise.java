@@ -11,13 +11,12 @@ import java.util.List;
 
 class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromise<T, U> {
 
-    @SuppressWarnings("unchecked")
-    public AbstractMultiThreadPromise(Awex awex, Promise promise, Apply<T, U> filter) {
+    public AbstractMultiThreadPromise(Awex awex, CollectionPromise<T> promise, Apply<T, U> filter) {
         super(awex, promise, filter);
     }
 
     @Override
-    protected void applyToCollectionAndResolve(Iterable<T> items) {
+    protected void apply(Collection<T> items) {
         int numberOfThreads = mAwex.getNumberOfThreads();
         Collection<List<T>> itemsGroupedByThread = split(items, numberOfThreads);
         Collection<Promise<Collection<U>>> promises = launchAll(itemsGroupedByThread);

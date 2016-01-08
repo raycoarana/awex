@@ -4,36 +4,29 @@ import com.raycoarana.awex.transform.Mapper;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import static org.junit.Assert.assertEquals;
 
-public class SingleThreadMapperPromiseTest extends BasePromiseTest {
+public class MapperTransformerPromiseTest extends BasePromiseTest {
 
-    private AwexPromise<Collection<Integer>> mPromise;
-    private CollectionPromise<String> mMappedValue;
+    private AwexPromise<Integer> mPromise;
+    private Promise<String> mMappedValue;
 
     @Test
-    public void shouldMapAResolvedPromiseWithCollection() throws Exception {
+    public void shouldMapAResolvedPromiseWithSingleValue() throws Exception {
         setUpAwex();
 
-        AwexPromise<Collection<Integer>> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
-        mMappedValue = mCollectionPromise.<Integer>stream().map(new Mapper<Integer, String>() {
+        mMappedValue = mPromise.mapSingle(new Mapper<Integer, String>() {
             @Override
             public String map(Integer value) {
                 return String.valueOf(value);
             }
         });
 
-        mCollectionPromise.resolve(Arrays.asList(1, 2, 3));
+        mPromise.resolve(1);
 
-        Collection<String> result = mMappedValue.getResult();
-        String[] results = result.toArray(new String[result.size()]);
-        assertEquals("1", results[0]);
-        assertEquals("2", results[1]);
-        assertEquals("3", results[2]);
+        assertEquals("1", mMappedValue.getResult());
     }
 
     @Test
@@ -42,7 +35,7 @@ public class SingleThreadMapperPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mTask);
 
-        mMappedValue = mPromise.<Integer>stream().map(new Mapper<Integer, String>() {
+        mMappedValue = mPromise.mapSingle(new Mapper<Integer, String>() {
             @Override
             public String map(Integer value) {
                 return String.valueOf(value);
@@ -60,7 +53,7 @@ public class SingleThreadMapperPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mTask);
 
-        mMappedValue = mPromise.<Integer>stream().map(new Mapper<Integer, String>() {
+        mMappedValue = mPromise.mapSingle(new Mapper<Integer, String>() {
             @Override
             public String map(Integer value) {
                 return String.valueOf(value);

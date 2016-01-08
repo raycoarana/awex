@@ -547,36 +547,19 @@ class AwexPromise<T> implements Promise<T> {
         mLogger.v("Promise of task " + mId + " changed to state " + newState);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <U, V extends Collection<U>> Promise<V> filter(Filter<U> filter) {
-        return new SingleThreadFilterPromise(mAwex, this, filter);
+    public <U> Promise<U> mapSingle(Mapper<T, U> mapper) {
+        return new MapperTransformerPromise<>(mAwex, this, mapper);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <U, V extends Collection<U>> Promise<V> filterParallel(Filter<U> filter) {
-        if(mAwex.getNumberOfThreads() > 1) {
-            return new MultiThreadFilterPromise(mAwex, this, filter);
-        } else {
-            return filter(filter);
-        }
+    public Promise<T> filterSingle(Filter<T> filter) {
+        return new FilterTransformerPromise<>(mAwex, this, filter);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <U, W, V extends Collection<W>> Promise<V> map(Mapper<U, W> mapper) {
-        return new SingleThreadMapperPromise(mAwex, this, mapper);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <U, W, V extends Collection<W>> Promise<V> mapParallel(Mapper<U, W> mapper) {
-        if(mAwex.getNumberOfThreads() > 1) {
-            return new MultiThreadMapperPromise(mAwex, this, mapper);
-        } else {
-            return map(mapper);
-        }
+    public <U> CollectionPromise<U> stream() {
+        return new AwexCollectionPromise<>(mAwex, this);
     }
 
     private abstract class CancellableRunnable implements Runnable {

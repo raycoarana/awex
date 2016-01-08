@@ -110,13 +110,22 @@ public interface Promise<T> {
      */
     Promise<Collection<T>> and(Promise<T> promise);
 
-    <U, V extends Collection<U>> Promise<V> filter(Filter<U> filter);
+    <U> Promise<U> mapSingle(Mapper<T, U> mapper);
 
-    <U, V extends Collection<U>> Promise<V> filterParallel(Filter<U> filter);
+    /**
+     * Filters the item, if the result of the promise does not match the filter, the promise is rejected
+     *
+     * @param filter
+     * @return
+     */
+    Promise<T> filterSingle(Filter<T> filter);
 
-    @SuppressWarnings("unchecked")
-    <U, W, V extends Collection<W>> Promise<V> map(Mapper<U, W> mapper);
+    /**
+     * Creates a collection promise from this promise. If this promise result is a collection,
+     * it will be converted, otherwise, the result will be inserted in a collection.
+     *
+     * @return
+     */
+    <U> CollectionPromise<U> stream();
 
-    @SuppressWarnings("unchecked")
-    <U, W, V extends Collection<W>> Promise<V> mapParallel(Mapper<U, W> mapper);
 }

@@ -2,9 +2,9 @@ package com.raycoarana.awex;
 
 import com.raycoarana.awex.transform.Mapper;
 
-public class SingleThreadMapperPromise<T, U> extends AbstractSingleThreadPromise<T, U> {
+public class MapperTransformerPromise<T, U> extends AbstractTransformerPromise<T, U> {
 
-    public SingleThreadMapperPromise(Awex awex, CollectionPromise<T> promise, final Mapper<T, U> mapper) {
+    public MapperTransformerPromise(Awex awex, Promise<T> promise, final Mapper<T, U> mapper) {
         super(awex, promise, new Apply<T, U>() {
             @Override
             public U apply(T item) {
@@ -12,4 +12,5 @@ public class SingleThreadMapperPromise<T, U> extends AbstractSingleThreadPromise
             }
         });
     }
+
 }

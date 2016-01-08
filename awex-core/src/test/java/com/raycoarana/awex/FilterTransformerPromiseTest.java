@@ -4,37 +4,47 @@ import com.raycoarana.awex.transform.Filter;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import static org.junit.Assert.assertEquals;
 
-public class SingleThreadFilterPromiseTest extends BasePromiseTest {
+public class FilterTransformerPromiseTest extends BasePromiseTest {
 
-
-    private AwexPromise<Collection<Integer>> mPromise;
-    private CollectionPromise<Integer> mFilteredValue;
+    private AwexPromise<Integer> mPromise;
+    private Promise<Integer> mFilteredValue;
 
     @Test
-    public void shouldFilterAResolvedPromiseWithCollection() throws Exception {
+    public void shouldFilterAResolvedPromiseWithSingleValue() throws Exception {
         setUpAwex();
 
-        AwexPromise<Collection<Integer>> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
+        mPromise = new AwexPromise<>(mAwex, mTask);
 
-        mFilteredValue = mCollectionPromise.<Integer>stream().filter(new Filter<Integer>() {
+        mFilteredValue = mPromise.filterSingle(new Filter<Integer>() {
             @Override
             public boolean filter(Integer value) {
                 return value > 2;
             }
         });
 
-        mCollectionPromise.resolve(Arrays.asList(1, 2, 3, 4, 5));
+        mPromise.resolve(1);
 
-        Collection<Integer> result = mFilteredValue.getResult();
-        Integer[] results = result.toArray(new Integer[result.size()]);
-        assertEquals(3, (int) results[0]);
-        assertEquals(4, (int) results[1]);
-        assertEquals(5, (int) results[2]);
+        assertEquals(Promise.STATE_REJECTED, mFilteredValue.getState());
+    }
+
+    @Test
+    public void shouldNotFilterAResolvedPromiseWithSingleValue() throws Exception {
+        setUpAwex();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+
+        mFilteredValue = mPromise.filterSingle(new Filter<Integer>() {
+            @Override
+            public boolean filter(Integer value) {
+                return value == 1;
+            }
+        });
+
+        mPromise.resolve(1);
+
+        assertEquals(1, (int) mFilteredValue.getResult());
     }
 
     @Test
@@ -43,7 +53,7 @@ public class SingleThreadFilterPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mTask);
 
-        mFilteredValue = mPromise.<Integer>stream().filter(new Filter<Integer>() {
+        mFilteredValue = mPromise.filterSingle(new Filter<Integer>() {
             @Override
             public boolean filter(Integer value) {
                 return false;
@@ -61,7 +71,7 @@ public class SingleThreadFilterPromiseTest extends BasePromiseTest {
 
         mPromise = new AwexPromise<>(mAwex, mTask);
 
-        mFilteredValue = mPromise.<Integer>stream().filter(new Filter<Integer>() {
+        mFilteredValue = mPromise.filterSingle(new Filter<Integer>() {
             @Override
             public boolean filter(Integer value) {
                 return false;
