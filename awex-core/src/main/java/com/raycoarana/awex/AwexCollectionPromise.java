@@ -4,6 +4,7 @@ import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.transform.Filter;
+import com.raycoarana.awex.transform.Func;
 import com.raycoarana.awex.transform.Mapper;
 
 import java.util.Collection;
@@ -68,6 +69,20 @@ class AwexCollectionPromise<T> extends AwexPromise<Collection<T>> implements Col
             return new MultiThreadMapperPromise<>(mAwex, this, mapper);
         } else {
             return map(mapper);
+        }
+    }
+
+    @Override
+    public CollectionPromise<T> forEach(Func<T> func) {
+        return new SingleThreadForEachPromise<>(mAwex, this, func);
+    }
+
+    @Override
+    public CollectionPromise<T> forEachParallel(Func<T> func) {
+        if (mAwex.getNumberOfThreads() > 1) {
+            return new MultiThreadForEachPromise<>(mAwex, this, func);
+        } else {
+            return forEach(func);
         }
     }
 

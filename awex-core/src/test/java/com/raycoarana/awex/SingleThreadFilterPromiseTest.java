@@ -11,7 +11,6 @@ import static org.junit.Assert.assertEquals;
 
 public class SingleThreadFilterPromiseTest extends BasePromiseTest {
 
-
     private AwexPromise<Collection<Integer>> mPromise;
     private CollectionPromise<Integer> mFilteredValue;
 
