@@ -105,29 +105,70 @@ public class Awex {
      *
      * @param promises
      * @param <T>      type of result of the promises
-     * @return a new promise that only will be resolve if all promises get resolved, otherwise if
+     * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
      */
     public <T> Promise<Collection<T>> allOf(Promise<T>... promises) {
         return allOf(Arrays.asList(promises));
     }
 
+    /**
+     * Creates a new promise that will be resolved only if all promises get resolved. If any of the
+     * promises is rejected the created promise will be rejected.
+     *
+     * @param promises
+     * @param <T>      type of result of the promises
+     * @return a new promise that only will be resolve if all promises get resolved, otherwise it
+     * will fail.
+     */
     public <T> Promise<Collection<T>> allOf(Collection<Promise<T>> promises) {
         return new AllOfPromise<>(this, promises);
     }
 
+    /**
+     * Creates a new promise that will be resolved if any promise get resolved.
+     *
+     * @param promises
+     * @param <T>      type of result of the promises
+     * @return a new promise that will be resolve if any promise get resolved, otherwise it
+     * will fail.
+     */
     public <T> Promise<T> anyOf(Promise<T>... promises) {
         return anyOf(Arrays.asList(promises));
     }
 
+    /**
+     * Creates a new promise that will be resolved if any promise get resolved.
+     *
+     * @param promises
+     * @param <T>      type of result of the promises
+     * @return a new promise that will be resolve if any promise get resolved, otherwise it
+     * will fail.
+     */
     public <T> Promise<T> anyOf(Collection<Promise<T>> promises) {
         return new AnyOfPromise<>(this, promises);
     }
 
+    /**
+     * Creates a new promise that will be resolved when all promises finishes its execution, that
+     * is, get resolved or rejected.
+     *
+     * @param promises
+     * @param <T>      type of result of the promises
+     * @return a new promise that will be resolved when all promises finishes its execution.
+     */
     public <T> Promise<MultipleResult<T>> afterAll(Promise<T>... promises) {
         return afterAll(Arrays.asList(promises));
     }
 
+    /**
+     * Creates a new promise that will be resolved when all promises finishes its execution, that
+     * is, get resolved or rejected.
+     *
+     * @param promises
+     * @param <T>      type of result of the promises
+     * @return a new promise that will be resolved when all promises finishes its execution.
+     */
     public <T> Promise<MultipleResult<T>> afterAll(Collection<Promise<T>> promises) {
         return new AfterAllPromise<>(this, promises);
     }

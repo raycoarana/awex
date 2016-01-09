@@ -60,7 +60,7 @@ class AwexPromise<T> implements Promise<T> {
      * @param result value used to resolve the promise
      * @throws IllegalStateException if the promise is not in pending state
      */
-    public void resolve(T result) {
+    public Promise<T> resolve(T result) {
         synchronized (this) {
             validateInPendingState();
 
@@ -82,6 +82,8 @@ class AwexPromise<T> implements Promise<T> {
                 clearCallbacks();
             }
         }
+
+        return this;
     }
 
 
@@ -119,10 +121,10 @@ class AwexPromise<T> implements Promise<T> {
      *
      * @param ex exception that represents the rejection of the promise
      */
-    public void reject(Exception ex) {
+    public Promise<T> reject(Exception ex) {
         synchronized (this) {
             if (mState == STATE_CANCELLED) {
-                return;
+                return this;
             }
             validateInPendingState();
 
@@ -144,6 +146,8 @@ class AwexPromise<T> implements Promise<T> {
                 clearCallbacks();
             }
         }
+
+        return this;
     }
 
     private void triggerAllFails() {

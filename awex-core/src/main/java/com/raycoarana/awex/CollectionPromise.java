@@ -20,4 +20,6 @@ public interface CollectionPromise<T> extends Promise<Collection<T>> {
 
     CollectionPromise<T> forEachParallel(Func<T> func);
 
+    Promise<T> singleOrFirst();
+
 }

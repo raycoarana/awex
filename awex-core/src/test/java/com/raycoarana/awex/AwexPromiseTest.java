@@ -14,6 +14,10 @@ import com.raycoarana.awex.callbacks.UIProgressCallback;
 import org.junit.Test;
 import org.mockito.Mock;
 
+import java.util.Collection;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -492,4 +496,23 @@ public class AwexPromiseTest extends BasePromiseTest {
         verify(mUIProgressCallback).onProgress(SOME_PROGRESS);
     }
 
+    @Test
+    public void shouldCreateOrPromise() {
+        setUpAwex();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        Promise<Integer> anyOfPromise = mPromise.or(new AwexPromise<Integer>(mAwex, mTask));
+
+        assertThat(anyOfPromise, instanceOf(OrPromise.class));
+    }
+
+    @Test
+    public void shouldCreateAllOfPromise() {
+        setUpAwex();
+
+        mPromise = new AwexPromise<>(mAwex, mTask);
+        Promise<Collection<Integer>> allOfPromise = mPromise.and(new AwexPromise<Integer>(mAwex, mTask));
+
+        assertThat(allOfPromise, instanceOf(AllOfPromise.class));
+    }
 }

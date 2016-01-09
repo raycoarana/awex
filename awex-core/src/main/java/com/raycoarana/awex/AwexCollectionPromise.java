@@ -44,6 +44,12 @@ class AwexCollectionPromise<T> extends AwexPromise<Collection<T>> implements Col
         });
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <U> CollectionPromise<U> stream() {
+        return (CollectionPromise<U>) this;
+    }
+
     @Override
     public CollectionPromise<T> filter(Filter<T> filter) {
         return new SingleThreadFilterPromise<>(mAwex, this, filter);
@@ -84,6 +90,16 @@ class AwexCollectionPromise<T> extends AwexPromise<Collection<T>> implements Col
         } else {
             return forEach(func);
         }
+    }
+
+    @Override
+    public Promise<T> singleOrFirst() {
+        return new MapperTransformerPromise<>(mAwex, this, new Mapper<Collection<T>, T>() {
+            @Override
+            public T map(Collection<T> value) {
+                return value.size() > 0 ? value.iterator().next() : null;
+            }
+        });
     }
 
 }

@@ -6,8 +6,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.Semaphore;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -288,6 +291,37 @@ public class AwexTest {
 
         semaphore.release();
         waitingPromise.getResult();
+    }
+
+    @Test
+    public void shouldCreateAllOfPromise() {
+        setUpAwex();
+
+        Promise<Collection<Integer>> allOfPromise = mAwex.allOf(new AwexPromise<Integer>(mAwex),
+                new AwexPromise<Integer>(mAwex));
+
+        assertThat(allOfPromise, instanceOf(AllOfPromise.class));
+    }
+
+    @Test
+    public void shouldCreateAnyOfPromise() {
+        setUpAwex();
+
+        Promise<Integer> anyOfPromise = mAwex.anyOf(new AwexPromise<Integer>(mAwex),
+                new AwexPromise<Integer>(mAwex));
+
+        assertThat(anyOfPromise, instanceOf(AnyOfPromise.class));
+    }
+
+    @Test
+    public void shouldCreateAfterAllPromise() {
+        setUpAwex();
+
+        Promise<MultipleResult<Integer>> afterAllPromise = mAwex.afterAll(
+                new AwexPromise<Integer>(mAwex),
+                new AwexPromise<Integer>(mAwex));
+
+        assertThat(afterAllPromise, instanceOf(AfterAllPromise.class));
     }
 
     private void setUpAwex() {
