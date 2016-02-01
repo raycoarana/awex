@@ -44,7 +44,7 @@ public class BasePromiseTest {
             public Promise answer(InvocationOnMock invocation) throws Throwable {
                 Task task = ((Task) invocation.getArguments()[0]);
                 task.initialize(mAwex);
-                task.markQueue();
+                task.markQueue(null);
                 task.execute();
                 return task.getPromise();
             }

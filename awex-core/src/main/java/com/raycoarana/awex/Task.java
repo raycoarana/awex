@@ -1,5 +1,6 @@
 package com.raycoarana.awex;
 
+import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -28,18 +29,30 @@ public abstract class Task<T> {
 
     private final int mPriority;
 
-    private Logger mLogger;
+    private Awex mAwex;
     private long mId;
+    private Logger mLogger;
     private AwexPromise<T> mPromise;
     private int mCurrentState = STATE_NOT_INITIALIZED;
     private Worker mWorker;
+    private AwexTaskQueue mTaskQueue;
+    private int mQueueTimeout;
+    private TimerTask mQueueTimeoutTimerTask;
+    private int mExecutionTimeout;
+    private TimerTask mExecutionTimeoutTimerTask;
 
     public Task() {
-        this(PRIORITY_NORMAL);
+        this(PRIORITY_NORMAL, -1, -1);
     }
 
     public Task(int priority) {
+        this(priority, -1, -1);
+    }
+
+    public Task(int priority, int queueTimeout, int executionTimeout) {
         mPriority = priority;
+        mQueueTimeout = queueTimeout;
+        mExecutionTimeout = executionTimeout;
     }
 
     void initialize(Awex awex) {
@@ -47,6 +60,7 @@ public abstract class Task<T> {
             throw new IllegalStateException("Trying to reuse an already submitted task");
         }
 
+        mAwex = awex;
         mId = awex.provideWorkId();
         mLogger = awex.provideLogger();
 
@@ -54,6 +68,19 @@ public abstract class Task<T> {
         printStateChanged("NOT_QUEUE");
 
         mPromise = new AwexPromise<>(awex, this);
+
+        mQueueTimeoutTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                mAwex.onTaskQueueTimeout(Task.this);
+            }
+        };
+        mExecutionTimeoutTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                mAwex.onTaskExecutionTimeout(Task.this);
+            }
+        };
     }
 
     public long getId() {
@@ -111,8 +138,10 @@ public abstract class Task<T> {
     final void execute() throws InterruptedException {
         checkInitialized();
 
+        mQueueTimeoutTimerTask.cancel();
         mCurrentState = STATE_RUNNING;
         printStateChanged("RUNNING");
+        mAwex.schedule(mExecutionTimeoutTimerTask, mExecutionTimeout);
 
         T result = null;
         try {
@@ -126,6 +155,8 @@ public abstract class Task<T> {
             throw ex;
         } catch (Exception ex) {
             mPromise.reject(ex);
+        } finally {
+            mExecutionTimeoutTimerTask.cancel();
         }
 
         resolveWithResult(result);
@@ -164,22 +195,28 @@ public abstract class Task<T> {
         }
     }
 
-    final void markQueue() {
+    final void markQueue(AwexTaskQueue taskQueue) {
         checkInitialized();
 
+        mTaskQueue = taskQueue;
         mCurrentState = STATE_QUEUE;
         printStateChanged("QUEUE");
+        mAwex.schedule(mQueueTimeoutTimerTask, mQueueTimeout);
     }
 
     private void printStateChanged(String newState) {
         mLogger.v("Task " + mId + " state changed to " + newState);
     }
 
-    Worker getWorker() {
+    final Worker getWorker() {
         return mWorker;
     }
 
-    void setWorker(Worker worker) {
+    final void setWorker(Worker worker) {
         mWorker = worker;
+    }
+
+    final AwexTaskQueue getQueue() {
+        return mTaskQueue;
     }
 }

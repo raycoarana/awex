@@ -9,8 +9,10 @@ class AwexTaskQueue {
 
     private final PriorityBlockingQueue<Task> mTaskQueue;
     private final AtomicInteger mWaitersCount = new AtomicInteger();
+    private int mId;
 
-    public AwexTaskQueue() {
+    public AwexTaskQueue(int id) {
+        mId = id;
         mTaskQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY, new TaskPriorityComparator());
     }
 
@@ -40,4 +42,9 @@ class AwexTaskQueue {
     public int size() {
         return mTaskQueue.size();
     }
+
+    public int getId() {
+        return mId;
+    }
+
 }
