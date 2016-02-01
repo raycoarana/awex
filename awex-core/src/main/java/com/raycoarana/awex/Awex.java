@@ -191,6 +191,10 @@ public class Awex {
         }
     }
 
+    public <T> AwexPromise<T> newAwexPromise() {
+        return new AwexPromise<>(this);
+    }
+
     /**
      * Returns an already rejected promise
      *

@@ -210,7 +210,7 @@ public class AwexTest {
         mAwex.submit(someTask);
     }
 
-    @Test
+    @Test(timeout = 500)
     public void shouldLetToSubmitAgainTheSameTaskIfResetWhenFinished() throws Exception {
         setUpAwex();
 
