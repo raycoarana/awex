@@ -1,5 +1,7 @@
 package com.raycoarana.awex;
 
+import com.raycoarana.awex.policy.LinearWithRealTimePriority;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -325,7 +327,7 @@ public class AwexTest {
     }
 
     private void setUpAwex() {
-        mAwex = new Awex(mUIThread, new ConsoleLogger(), 1, 1);
+        mAwex = new Awex(mUIThread, new ConsoleLogger(), new LinearWithRealTimePriority(1));
     }
 
 }
