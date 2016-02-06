@@ -222,9 +222,8 @@ public abstract class Task<T> {
         return mTaskQueue;
     }
 
-
     public void toString(StringBuilder stringBuilder) {
-        String taskName = getClass().getSimpleName();
+        String taskName = getClass().getName();
         stringBuilder.append("{/*")
                 .append(taskName)
                 .append("*/ id: ")

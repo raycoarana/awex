@@ -9,8 +9,7 @@ public interface PoolManager {
     void queueTask(int queueId, Task task);
     void mergeTask(Task taskInQueue, Task taskToMerge);
 
-    long createWorker(int queueId);
-    void removeWorker(int queueId, int workerId);
+    int createWorker(int queueId);
     void removeWorker(int queueId, int workerId, boolean shouldInterrupt);
 
 }

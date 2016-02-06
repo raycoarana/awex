@@ -326,6 +326,64 @@ public class AwexTest {
         assertThat(afterAllPromise, instanceOf(AfterAllPromise.class));
     }
 
+    @Test
+    public void shouldAbortTaskInQueueIfTimeoutExpires() {
+        setUpAwex();
+
+        final Semaphore semaphore = new Semaphore(0);
+
+        mAwex.submit(new Task<Integer>() {
+
+            @Override
+            protected Integer run() throws InterruptedException {
+                semaphore.acquire();
+                return null;
+            }
+        });
+
+        mTaskPromise = mAwex.submit(new Task<Integer>(Task.PRIORITY_NORMAL, 500, 500) {
+            @Override
+            protected Integer run() throws InterruptedException {
+                return SOME_VALUE;
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertTrue(mTaskPromise.isCancelled());
+
+        semaphore.release();
+    }
+
+    @Test
+    public void shouldAbortTaskInExecutionIfTimeoutExpires() {
+        setUpAwex();
+
+        final Semaphore semaphore = new Semaphore(0);
+
+        mTaskPromise = mAwex.submit(new Task<Integer>(Task.PRIORITY_NORMAL, 500, 500) {
+            @Override
+            protected Integer run() throws InterruptedException {
+                semaphore.acquire();
+                return SOME_VALUE;
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertTrue(mTaskPromise.isCancelled());
+
+        semaphore.release();
+    }
+
     private void setUpAwex() {
         mAwex = new Awex(mUIThread, new ConsoleLogger(), new LinearWithRealTimePriority(1));
     }

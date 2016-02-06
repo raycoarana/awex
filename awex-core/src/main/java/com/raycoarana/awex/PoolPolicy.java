@@ -73,8 +73,8 @@ public abstract class PoolPolicy {
      *
      * @param queueId id of the queue where the worker will be listen for tasks to execute
      */
-    public void createWorker(int queueId) {
-        mPoolManager.createWorker(queueId);
+    public int createWorker(int queueId) {
+        return mPoolManager.createWorker(queueId);
     }
 
     /**
@@ -85,7 +85,7 @@ public abstract class PoolPolicy {
      * @param workerId id of the worker to remove from the queue
      */
     public void removeWorker(int queueId, int workerId) {
-        mPoolManager.removeWorker(queueId, workerId);
+        mPoolManager.removeWorker(queueId, workerId, false);
     }
 
     /**

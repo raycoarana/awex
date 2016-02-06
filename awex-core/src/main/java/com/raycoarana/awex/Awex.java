@@ -12,6 +12,7 @@ import com.raycoarana.awex.state.WorkerState;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ public class Awex {
     private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
     private final Timer mTimer;
     private AwexPromise mAbsentPromise;
+    private Map<Task, Task> mTasks = new HashMap<>();
 
     public Awex(UIThread uiThread, Logger logger) {
         this(uiThread, logger, PoolPolicy.DEFAULT);
@@ -81,7 +83,8 @@ public class Awex {
     }
 
     private PoolState extractPoolState() {
-        return new PoolState(extractQueueState());
+        return new PoolState(extractQueueState(),
+                             Collections.synchronizedMap(Collections.unmodifiableMap(mTasks)));
     }
 
     private Map<Integer, QueueState> extractQueueState() {
@@ -131,7 +134,7 @@ public class Awex {
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
      * promises is rejected the created promise will be rejected.
      *
-     * @param promises
+     * @param promises source pormises
      * @param <T>      type of result of the promises
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
@@ -145,7 +148,7 @@ public class Awex {
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
      * promises is rejected the created promise will be rejected.
      *
-     * @param promises
+     * @param promises source pormises
      * @param <T>      type of result of the promises
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
@@ -157,7 +160,7 @@ public class Awex {
     /**
      * Creates a new promise that will be resolved if any promise get resolved.
      *
-     * @param promises
+     * @param promises source pormises
      * @param <T>      type of result of the promises
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
@@ -170,7 +173,7 @@ public class Awex {
     /**
      * Creates a new promise that will be resolved if any promise get resolved.
      *
-     * @param promises
+     * @param promises source pormises
      * @param <T>      type of result of the promises
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
@@ -183,7 +186,7 @@ public class Awex {
      * Creates a new promise that will be resolved when all promises finishes its execution, that
      * is, get resolved or rejected.
      *
-     * @param promises
+     * @param promises source pormises
      * @param <T>      type of result of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
@@ -196,7 +199,7 @@ public class Awex {
      * Creates a new promise that will be resolved when all promises finishes its execution, that
      * is, get resolved or rejected.
      *
-     * @param promises
+     * @param promises source pormises
      * @param <T>      type of result of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
@@ -255,11 +258,17 @@ public class Awex {
         mPoolPolicy.onTaskExecutionTimeout(extractPoolState(), task);
     }
 
+    @Override
+    public String toString() {
+        return extractPoolState().toString();
+    }
+
     private final WorkerListener mWorkerListener = new WorkerListener() {
 
         @Override
         public void onTaskFinished(Task task) {
             mPoolPolicy.onTaskFinished(extractPoolState(), task);
+            mTasks.remove(task);
         }
 
     };
@@ -299,6 +308,7 @@ public class Awex {
             AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
             task.markQueue(taskQueue);
             taskQueue.insert(task);
+            mTasks.put(task, task);
         }
 
         @SuppressWarnings("unchecked")
@@ -337,7 +347,7 @@ public class Awex {
         }
 
         @Override
-        public synchronized long createWorker(int queueId) {
+        public synchronized int createWorker(int queueId) {
             AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
             Map<Integer, Worker> workersOfQueue = mWorkers.get(queueId);
             if (workersOfQueue == null) {
@@ -348,11 +358,6 @@ public class Awex {
             int id = mThreadIdProvider.incrementAndGet();
             workersOfQueue.put(id, new Worker(id, taskQueue, mLogger, mWorkerListener));
             return id;
-        }
-
-        @Override
-        public synchronized void removeWorker(int queueId, int workerId) {
-            removeWorker(queueId, workerId, false);
         }
 
         @Override
