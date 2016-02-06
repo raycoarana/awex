@@ -21,18 +21,18 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Awex implements PoolManager, WorkerListener {
+public class Awex {
 
     private final UIThread mUIThread;
     private final Logger mLogger;
     private final AtomicLong mWorkIdProvider = new AtomicLong();
     private final HashMap<Integer, AwexTaskQueue> mTaskQueueMap;
-    private final HashMap<Integer, Map<Long, Worker>> mWorkers;
+    private final HashMap<Integer, Map<Integer, Worker>> mWorkers;
     private final PoolPolicy mPoolPolicy;
-    private final AtomicLong mThreadIdProvider = new AtomicLong();
+    private final AtomicInteger mThreadIdProvider = new AtomicInteger();
     private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
     private final Timer mTimer;
     private AwexPromise mAbsentPromise;
@@ -51,7 +51,7 @@ public class Awex implements PoolManager, WorkerListener {
 
         initializeAbsentPromise();
 
-        mPoolPolicy.initialize(this);
+        mPoolPolicy.initialize(new PoolManagerImpl());
     }
 
     private void initializeAbsentPromise() {
@@ -88,7 +88,8 @@ public class Awex implements PoolManager, WorkerListener {
         List<AwexTaskQueue> queues = new ArrayList<>(mTaskQueueMap.values());
         Map<Integer, QueueState> queueStates = new HashMap<>(queues.size());
         for (AwexTaskQueue queue : queues) {
-            QueueState queueState = new QueueState(queue.size(),
+            QueueState queueState = new QueueState(queue.getId(),
+                    queue.size(),
                     queue.waiters(),
                     extractWorkersInfo(queue.getId()));
             queueStates.put(queue.getId(), queueState);
@@ -96,9 +97,9 @@ public class Awex implements PoolManager, WorkerListener {
         return queueStates;
     }
 
-    private Map<Long, WorkerState> extractWorkersInfo(int queueId) {
+    private Map<Integer, WorkerState> extractWorkersInfo(int queueId) {
         Set<Worker> workers = new HashSet<>(mWorkers.get(queueId).values());
-        Map<Long, WorkerState> stateMap = new HashMap<>();
+        Map<Integer, WorkerState> stateMap = new HashMap<>();
         for (Worker worker : workers) {
             stateMap.put(worker.getId(), worker.takeState());
         }
@@ -118,7 +119,7 @@ public class Awex implements PoolManager, WorkerListener {
                 if (!taskQueue.remove(task) && mayInterrupt) {
                     Worker worker = task.getWorker();
                     if (worker != null) {
-                        mWorkers.get(taskQueue.getId()).remove(worker);
+                        mWorkers.get(taskQueue.getId()).remove(worker.getId());
                         worker.interrupt();
                     }
                 }
@@ -135,7 +136,8 @@ public class Awex implements PoolManager, WorkerListener {
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
      */
-    public <T> Promise<Collection<T>> allOf(Promise<T>... promises) {
+    @SafeVarargs
+    public final <T> Promise<Collection<T>> allOf(Promise<T>... promises) {
         return allOf(Arrays.asList(promises));
     }
 
@@ -160,7 +162,8 @@ public class Awex implements PoolManager, WorkerListener {
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
      */
-    public <T> Promise<T> anyOf(Promise<T>... promises) {
+    @SafeVarargs
+    public final <T> Promise<T> anyOf(Promise<T>... promises) {
         return anyOf(Arrays.asList(promises));
     }
 
@@ -184,7 +187,8 @@ public class Awex implements PoolManager, WorkerListener {
      * @param <T>      type of result of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
-    public <T> Promise<MultipleResult<T>> afterAll(Promise<T>... promises) {
+    @SafeVarargs
+    public final <T> Promise<MultipleResult<T>> afterAll(Promise<T>... promises) {
         return afterAll(Arrays.asList(promises));
     }
 
@@ -237,107 +241,132 @@ public class Awex implements PoolManager, WorkerListener {
         return Runtime.getRuntime().availableProcessors();
     }
 
-    @Override
-    public void createQueue(int queueId) {
-        if (mTaskQueueMap.containsKey(queueId)) {
-            throw new IllegalStateException("Trying to create a queue with an id that already exists");
-        }
-
-        mTaskQueueMap.put(queueId, new AwexTaskQueue(queueId));
-    }
-
-    @Override
-    public void executeImmediately(Task task) {
-        task.markQueue(null);
-        new RealTimeWorker(mThreadIdProvider.incrementAndGet(), task, mLogger);
-    }
-
-    @Override
-    public void queueTask(int queueId, Task task) {
-        AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
-        task.markQueue(taskQueue);
-        taskQueue.insert(task);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void mergeTask(Task taskInQueue, final Task taskToMerge) {
-        if (taskInQueue.getState() <= Task.STATE_NOT_QUEUE) {
-            throw new IllegalStateException("Task not queued");
-        }
-
-        taskToMerge.markQueue(null);
-        final AwexPromise promiseToMerge = (AwexPromise) taskToMerge.getPromise();
-        taskInQueue.getPromise().done(new DoneCallback() {
-            @Override
-            public void onDone(Object result) {
-                promiseToMerge.resolve(result);
-            }
-        }).fail(new FailCallback() {
-            @Override
-            public void onFail(Exception exception) {
-                promiseToMerge.reject(exception);
-            }
-        }).progress(new ProgressCallback() {
-            @Override
-            public void onProgress(float progress) {
-                promiseToMerge.notifyProgress(progress);
-            }
-        }).cancel(new CancelCallback() {
-            @Override
-            public void onCancel() {
-                promiseToMerge.cancelTask();
-            }
-        });
-    }
-
-    @Override
-    public long createWorker(int queueId) {
-        AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
-        Map<Long, Worker> workersOfQueue = mWorkers.get(queueId);
-        if (workersOfQueue == null) {
-            workersOfQueue = new HashMap<>();
-            mWorkers.put(queueId, workersOfQueue);
-        }
-
-        long id = mThreadIdProvider.incrementAndGet();
-        workersOfQueue.put(id, new Worker(id, taskQueue, mLogger, this));
-        return id;
-    }
-
-    @Override
-    public void removeWorker(int queueId, long workerId) {
-        removeWorker(queueId, workerId, false);
-    }
-
-    @Override
-    public void removeWorker(int queueId, long workerId, boolean shouldInterrupt) {
-        Worker worker = mWorkers.get(queueId).remove(workerId);
-        if (worker != null) {
-            if (shouldInterrupt) {
-                worker.interrupt();
-            } else {
-                worker.die();
-            }
-        }
-    }
-
-    @Override
-    public void onTaskFinished(Task task) {
-        mPoolPolicy.onTaskFinished(extractPoolState(), task);
-    }
-
     void schedule(TimerTask timerTask, int timeout) {
         if (timeout > 0) {
             mTimer.schedule(timerTask, timeout);
         }
     }
 
-    public <T> void onTaskQueueTimeout(Task<T> task) {
+    <T> void onTaskQueueTimeout(Task<T> task) {
         mPoolPolicy.onTaskQueueTimeout(extractPoolState(), task);
     }
 
-    public <T> void onTaskExecutionTimeout(Task<T> task) {
+    <T> void onTaskExecutionTimeout(Task<T> task) {
         mPoolPolicy.onTaskExecutionTimeout(extractPoolState(), task);
     }
+
+    private final WorkerListener mWorkerListener = new WorkerListener() {
+
+        @Override
+        public void onTaskFinished(Task task) {
+            mPoolPolicy.onTaskFinished(extractPoolState(), task);
+        }
+
+    };
+
+    private class PoolManagerImpl implements PoolManager {
+
+        @Override
+        public synchronized void createQueue(int queueId) {
+            if (mTaskQueueMap.containsKey(queueId)) {
+                throw new IllegalStateException("Trying to create a queue with an id that already exists");
+            }
+
+            mTaskQueueMap.put(queueId, new AwexTaskQueue(queueId));
+        }
+
+        @Override
+        public synchronized void removeQueue(int queueId) {
+            AwexTaskQueue awexTaskQueue = mTaskQueueMap.remove(queueId);
+            Map<Integer, Worker> workersOfQueue = mWorkers.remove(queueId);
+            for (Worker worker : workersOfQueue.values()) {
+                worker.die();
+            }
+            awexTaskQueue.destroy();
+            for (Worker worker : workersOfQueue.values()) {
+                worker.interrupt();
+            }
+        }
+
+        @Override
+        public void executeImmediately(Task task) {
+            task.markQueue(null);
+            new RealTimeWorker(mThreadIdProvider.incrementAndGet(), task, mLogger);
+        }
+
+        @Override
+        public void queueTask(int queueId, Task task) {
+            AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
+            task.markQueue(taskQueue);
+            taskQueue.insert(task);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void mergeTask(Task taskInQueue, final Task taskToMerge) {
+            if (taskInQueue.getState() <= Task.STATE_NOT_QUEUE) {
+                throw new IllegalStateException("Task not queued");
+            }
+            if (taskToMerge.getState() != Task.STATE_NOT_QUEUE) {
+                throw new IllegalStateException("Task already queue");
+            }
+
+            taskToMerge.markQueue(null);
+            final AwexPromise promiseToMerge = (AwexPromise) taskToMerge.getPromise();
+            taskInQueue.getPromise().done(new DoneCallback() {
+                @Override
+                public void onDone(Object result) {
+                    promiseToMerge.resolve(result);
+                }
+            }).fail(new FailCallback() {
+                @Override
+                public void onFail(Exception exception) {
+                    promiseToMerge.reject(exception);
+                }
+            }).progress(new ProgressCallback() {
+                @Override
+                public void onProgress(float progress) {
+                    promiseToMerge.notifyProgress(progress);
+                }
+            }).cancel(new CancelCallback() {
+                @Override
+                public void onCancel() {
+                    promiseToMerge.cancelTask();
+                }
+            });
+        }
+
+        @Override
+        public synchronized long createWorker(int queueId) {
+            AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
+            Map<Integer, Worker> workersOfQueue = mWorkers.get(queueId);
+            if (workersOfQueue == null) {
+                workersOfQueue = new HashMap<>();
+                mWorkers.put(queueId, workersOfQueue);
+            }
+
+            int id = mThreadIdProvider.incrementAndGet();
+            workersOfQueue.put(id, new Worker(id, taskQueue, mLogger, mWorkerListener));
+            return id;
+        }
+
+        @Override
+        public synchronized void removeWorker(int queueId, int workerId) {
+            removeWorker(queueId, workerId, false);
+        }
+
+        @Override
+        public synchronized void removeWorker(int queueId, int workerId, boolean shouldInterrupt) {
+            Worker worker = mWorkers.get(queueId).remove(workerId);
+            if (worker != null) {
+                if (shouldInterrupt) {
+                    worker.interrupt();
+                } else {
+                    worker.die();
+                }
+            }
+        }
+
+    }
+
 }

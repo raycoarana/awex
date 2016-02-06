@@ -9,17 +9,22 @@ class AwexTaskQueue {
 
     private final PriorityBlockingQueue<Task> mTaskQueue;
     private final AtomicInteger mWaitersCount = new AtomicInteger();
-    private int mId;
+    private final int mId;
+    private boolean mDie = false;
 
     public AwexTaskQueue(int id) {
         mId = id;
         mTaskQueue = new PriorityBlockingQueue<>(INITIAL_CAPACITY, new TaskPriorityComparator());
     }
 
-    public synchronized Task take(Worker worker) throws InterruptedException {
+    public Task take(Worker worker) throws InterruptedException {
         try {
+            if (mDie) {
+                throw new IllegalStateException("Queue is die!");
+            }
+
             mWaitersCount.incrementAndGet();
-            Task task =  mTaskQueue.take();
+            Task task = mTaskQueue.take();
             task.setWorker(worker);
             return task;
         } finally {
@@ -27,11 +32,19 @@ class AwexTaskQueue {
         }
     }
 
-    public void insert(Task task) {
+    public synchronized void insert(Task task) {
+        if (mDie) {
+            throw new IllegalStateException("Queue is die!");
+        }
+
         mTaskQueue.offer(task);
     }
 
     public synchronized <T> boolean remove(Task<T> task) {
+        if (mDie) {
+            throw new IllegalStateException("Queue is die!");
+        }
+
         return mTaskQueue.remove(task);
     }
 
@@ -47,4 +60,14 @@ class AwexTaskQueue {
         return mId;
     }
 
+    public synchronized void destroy() {
+        synchronized (this) {
+            mDie = true;
+        }
+
+        for (Task task : mTaskQueue) {
+            task.getPromise().cancelTask();
+        }
+        mTaskQueue.clear();
+    }
 }

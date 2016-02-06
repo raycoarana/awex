@@ -2,7 +2,7 @@ package com.raycoarana.awex.exceptions;
 
 public class AllFailException extends Exception {
 
-    private Exception[] mExceptions;
+    private final Exception[] mExceptions;
 
     public AllFailException(Exception... exceptions) {
         mExceptions = exceptions;

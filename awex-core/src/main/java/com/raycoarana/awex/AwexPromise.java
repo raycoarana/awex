@@ -34,11 +34,11 @@ class AwexPromise<T> implements Promise<T> {
     private T mResult;
     private Exception mException;
 
-    private List<DoneCallback<T>> mDoneCallbacks = new ArrayList<>();
-    private List<FailCallback> mFailCallbacks = new ArrayList<>();
-    private List<ProgressCallback> mProgressCallbacks = new ArrayList<>();
-    private List<CancelCallback> mCancelCallbacks = new ArrayList<>();
-    private List<AlwaysCallback> mAlwaysCallbacks = new ArrayList<>();
+    private final List<DoneCallback<T>> mDoneCallbacks = new ArrayList<>();
+    private final List<FailCallback> mFailCallbacks = new ArrayList<>();
+    private final List<ProgressCallback> mProgressCallbacks = new ArrayList<>();
+    private final List<CancelCallback> mCancelCallbacks = new ArrayList<>();
+    private final List<AlwaysCallback> mAlwaysCallbacks = new ArrayList<>();
 
     public AwexPromise(Awex awex) {
         this(awex, null);

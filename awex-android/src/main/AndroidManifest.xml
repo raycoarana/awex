@@ -1,4 +1,3 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.raycoarana.awex.android">
+<manifest package="com.raycoarana.awex.android">
 
 </manifest>

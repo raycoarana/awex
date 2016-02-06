@@ -36,9 +36,9 @@ public abstract class Task<T> {
     private int mCurrentState = STATE_NOT_INITIALIZED;
     private Worker mWorker;
     private AwexTaskQueue mTaskQueue;
-    private int mQueueTimeout;
+    private final int mQueueTimeout;
     private TimerTask mQueueTimeoutTimerTask;
-    private int mExecutionTimeout;
+    private final int mExecutionTimeout;
     private TimerTask mExecutionTimeoutTimerTask;
 
     public Task() {
@@ -72,7 +72,9 @@ public abstract class Task<T> {
         mQueueTimeoutTimerTask = new TimerTask() {
             @Override
             public void run() {
-                mAwex.onTaskQueueTimeout(Task.this);
+                if (mTaskQueue != null && mTaskQueue.remove(Task.this)) {
+                    mAwex.onTaskQueueTimeout(Task.this);
+                }
             }
         };
         mExecutionTimeoutTimerTask = new TimerTask() {
@@ -133,7 +135,7 @@ public abstract class Task<T> {
 
     protected abstract T run() throws InterruptedException;
 
-    ReentrantLock lock = new ReentrantLock();
+    final ReentrantLock lock = new ReentrantLock();
 
     final void execute() throws InterruptedException {
         checkInitialized();
@@ -218,5 +220,26 @@ public abstract class Task<T> {
 
     final AwexTaskQueue getQueue() {
         return mTaskQueue;
+    }
+
+
+    public void toString(StringBuilder stringBuilder) {
+        String taskName = getClass().getSimpleName();
+        stringBuilder.append("{/*")
+                .append(taskName)
+                .append("*/ id: ")
+                .append(mId)
+                .append(", state: ")
+                .append(mCurrentState)
+                .append(", priority: ")
+                .append(mPriority)
+                .append(" }");
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        toString(stringBuilder);
+        return stringBuilder.toString();
     }
 }

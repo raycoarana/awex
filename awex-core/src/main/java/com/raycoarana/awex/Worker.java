@@ -5,7 +5,7 @@ import com.raycoarana.awex.state.WorkerState.State;
 
 class Worker implements Runnable {
 
-    private final long mId;
+    private final int mId;
     private final Thread mThread;
     private final AwexTaskQueue mWorkQueue;
     private final Logger mLogger;
@@ -16,7 +16,7 @@ class Worker implements Runnable {
     private Task mCurrentTask;
     private long mLastTimeActive;
 
-    public Worker(long id, AwexTaskQueue workQueue, Logger logger, WorkerListener listener) {
+    public Worker(int id, AwexTaskQueue workQueue, Logger logger, WorkerListener listener) {
         mId = id;
         mThread = new Thread(this, "Awex worker " + id);
         mWorkQueue = workQueue;
@@ -26,7 +26,7 @@ class Worker implements Runnable {
         mThread.start();
     }
 
-    public long getId() {
+    public int getId() {
         return mId;
     }
 
@@ -61,13 +61,15 @@ class Worker implements Runnable {
                     }
                 }
             }
+        } catch (IllegalStateException ex) {
+            mLogger.v("Worker aborted with illegal state exception: " + ex.getMessage());
         } finally {
             mLogger.v("Worker " + mId + " dies");
         }
     }
 
     public synchronized WorkerState takeState() {
-        return new WorkerState(getState(), mCurrentTask, mLastTimeActive);
+        return new WorkerState(mId, getState(), mCurrentTask, mLastTimeActive);
     }
 
     private State getState() {
@@ -99,7 +101,12 @@ class Worker implements Runnable {
     }
 
     public void die() {
-        mDie = true;
+        synchronized (this) {
+            mDie = true;
+            if (!mExecutingTask) {
+                mThread.interrupt();
+            }
+        }
     }
 
 }

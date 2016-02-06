@@ -27,7 +27,7 @@ class RealTimeWorker implements Runnable {
                 mTask.execute();
                 mLogger.v("Worker " + mId + " ends executing task " + mTask.getId());
             } catch (InterruptedException e) {
-                return;
+                Thread.interrupted();
             }
         } finally {
             mLogger.v("Worker " + mId + " dies");

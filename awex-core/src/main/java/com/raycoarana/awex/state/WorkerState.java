@@ -6,14 +6,39 @@ import java.util.concurrent.locks.LockSupport;
 
 public class WorkerState {
 
+    public final int id;
     public final State state;
     public final Task currentTask;
     public final long lastTimeActive;
 
-    public WorkerState(State state, Task currentTask, long lastTimeActive) {
+    public WorkerState(int id, State state, Task currentTask, long lastTimeActive) {
+        this.id = id;
         this.state = state;
         this.currentTask = currentTask;
         this.lastTimeActive = lastTimeActive;
+    }
+
+    public void toString(StringBuilder stringBuilder) {
+        stringBuilder.append("{/*Worker*/ id: ")
+                .append(id)
+                .append(", state: ")
+                .append(state)
+                .append(", lastTimeActive: ")
+                .append(lastTimeActive)
+                .append(", currentTask: ");
+        if (currentTask != null) {
+            currentTask.toString(stringBuilder);
+        } else {
+            stringBuilder.append("null");
+        }
+        stringBuilder.append(" }");
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        toString(stringBuilder);
+        return stringBuilder.toString();
     }
 
     public enum State {
