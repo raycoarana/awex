@@ -14,14 +14,14 @@ import static org.junit.Assert.assertThat;
 public class MultiThreadFilterPromiseTest extends BasePromiseTest {
 
 
-    private AwexPromise<Integer> mPromise;
-    private CollectionPromise<Integer> mFilteredValue;
+    private AwexPromise<Integer, Float> mPromise;
+    private CollectionPromise<Integer, Float> mFilteredValue;
 
     @Test
     public void shouldFilterAResolvedPromiseWithCollection() throws Exception {
         setUpAwex();
 
-        AwexPromise<Collection<Integer>> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Collection<Integer>, Float> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mCollectionPromise.<Integer>stream().filterParallel(new Filter<Integer>() {
             @Override

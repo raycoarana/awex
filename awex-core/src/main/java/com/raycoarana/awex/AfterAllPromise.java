@@ -6,28 +6,28 @@ import com.raycoarana.awex.callbacks.FailCallback;
 
 import java.util.Collection;
 
-class AfterAllPromise<T> extends AwexPromise<MultipleResult<T>> {
+class AfterAllPromise<Result, Progress> extends AwexPromise<MultipleResult<Result, Progress>, Progress> {
 
-    private final Promise<T>[] mPromises;
-    private final T[] mResults;
+    private final Promise<Result, Progress>[] mPromises;
+    private final Result[] mResults;
     private final Exception[] mErrors;
 
     private int mResolvedPromises = 0;
 
     @SuppressWarnings("unchecked")
-    public AfterAllPromise(Awex awex, Collection<Promise<T>> promises) {
+    public AfterAllPromise(Awex awex, Collection<Promise<Result, Progress>> promises) {
         super(awex);
 
-        mResults = (T[]) new Object[promises.size()];
+        mResults = (Result[]) new Object[promises.size()];
         mPromises = promises.toArray(new Promise[promises.size()]);
         mErrors = new Exception[promises.size()];
 
         int i = 0;
-        for (Promise<T> promise : mPromises) {
+        for (Promise<Result, Progress> promise : mPromises) {
             final int promiseIndex = i;
-            promise.done(new DoneCallback<T>() {
+            promise.done(new DoneCallback<Result>() {
                 @Override
-                public void onDone(T result) {
+                public void onDone(Result result) {
                     synchronized (AfterAllPromise.this) {
                         if (getState() == STATE_PENDING) {
                             mResults[promiseIndex] = result;
@@ -65,7 +65,7 @@ class AfterAllPromise<T> extends AwexPromise<MultipleResult<T>> {
         }
     }
 
-    private MultipleResult<T> buildResult() {
+    private MultipleResult<Result, Progress> buildResult() {
         return new MultipleResult<>(mPromises, mResults, mErrors);
     }
 
@@ -74,7 +74,7 @@ class AfterAllPromise<T> extends AwexPromise<MultipleResult<T>> {
         synchronized (this) {
             super.cancelTask(mayInterrupt);
 
-            for (Promise<T> promise : mPromises) {
+            for (Promise<Result, Progress> promise : mPromises) {
                 promise.cancelTask(mayInterrupt);
             }
         }

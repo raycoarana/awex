@@ -13,9 +13,9 @@ public class AllOfPromiseTest extends BasePromiseTest {
     private static final Integer SOME_RESULT_VALUE = 42;
     private static final Integer SOME_OTHER_RESULT_VALUE = 45;
 
-    private AwexPromise<Integer> mFirstPromise;
-    private AwexPromise<Integer> mSecondPromise;
-    private AllOfPromise<Integer> mAllOfPromise;
+    private AwexPromise<Integer, Float> mFirstPromise;
+    private AwexPromise<Integer, Float> mSecondPromise;
+    private AllOfPromise<Integer, Float> mAllOfPromise;
 
     @Test
     public void shouldReturnValueOfFirstPromise() throws Exception {
@@ -67,7 +67,7 @@ public class AllOfPromiseTest extends BasePromiseTest {
         mFirstPromise = new AwexPromise<>(mAwex, mTask);
         mSecondPromise = new AwexPromise<>(mAwex, mTask);
         mAllOfPromise = new AllOfPromise<>(mAwex,
-                Arrays.<Promise<Integer>>asList(mFirstPromise, mSecondPromise));
+                Arrays.<Promise<Integer, Float>>asList(mFirstPromise, mSecondPromise));
     }
 
 }

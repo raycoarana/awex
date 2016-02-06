@@ -27,7 +27,7 @@ public class AwexTest {
     private Logger mLogger;
 
     private Awex mAwex;
-    private Promise<Integer> mTaskPromise;
+    private Promise<Integer, Float> mTaskPromise;
     private boolean mExecutionFlag;
     private Integer mResult;
     private ArrayList<Long> mResultCollection;
@@ -42,7 +42,7 @@ public class AwexTest {
     public void shouldExecuteSimpleTask() throws Exception {
         setUpAwex();
 
-        mTaskPromise = mAwex.submit(new Task<Integer>() {
+        mTaskPromise = mAwex.submit(new Task<Integer, Float>() {
             @Override
             protected Integer run() throws InterruptedException {
                 return SOME_VALUE;
@@ -56,7 +56,7 @@ public class AwexTest {
     public void shouldExecuteSimpleVoidTask() throws Exception {
         setUpAwex();
 
-        Promise<Void> promise = mAwex.submit(new VoidTask() {
+        Promise<Void, Void> promise = mAwex.submit(new VoidTask() {
             @Override
             protected void runWithoutResult() throws InterruptedException {
                 mResult = SOME_VALUE;
@@ -71,7 +71,7 @@ public class AwexTest {
     public void shouldExecuteAndRejectPromiseOfFailingTask() throws Exception {
         setUpAwex();
 
-        mTaskPromise = mAwex.submit(new Task<Integer>() {
+        mTaskPromise = mAwex.submit(new Task<Integer, Float>() {
             @Override
             protected Integer run() throws InterruptedException {
                 throw new IllegalArgumentException("Argument not valid!");
@@ -85,7 +85,7 @@ public class AwexTest {
     public void shouldCreateAnAlreadyResolvedPromise() throws Exception {
         setUpAwex();
 
-        Promise<Integer> promise = mAwex.of(SOME_VALUE);
+        Promise<Integer, Float> promise = mAwex.of(SOME_VALUE);
 
         assertTrue(promise.isResolved());
         assertEquals(SOME_VALUE, promise.getResult());
@@ -95,7 +95,7 @@ public class AwexTest {
     public void shouldCreateARejectedPromiseWhenCreatedWithNullValue() {
         setUpAwex();
 
-        Promise<Integer> promise = mAwex.of(null);
+        Promise<Integer, Float> promise = mAwex.of(null);
 
         assertTrue(promise.isRejected());
     }
@@ -104,7 +104,7 @@ public class AwexTest {
     public void shouldCreateARejectedPromise() {
         setUpAwex();
 
-        Promise<Integer> promise = mAwex.absent();
+        Promise<Integer, Float> promise = mAwex.absent();
 
         assertTrue(promise.isRejected());
     }
@@ -114,7 +114,7 @@ public class AwexTest {
         setUpAwex();
 
         final Semaphore workIsRunning = new Semaphore(0);
-        Promise<Integer> promise = mAwex.submit(new Task<Integer>() {
+        Promise<Integer, Float> promise = mAwex.submit(new Task<Integer, Float>() {
 
             @Override
             protected Integer run() throws InterruptedException {
@@ -136,7 +136,7 @@ public class AwexTest {
         setUpAwex();
 
         final Semaphore workIsRunning = new Semaphore(0);
-        mTaskPromise = mAwex.submit(new Task<Integer>() {
+        mTaskPromise = mAwex.submit(new Task<Integer, Float>() {
 
             @Override
             protected Integer run() throws InterruptedException {
@@ -252,8 +252,8 @@ public class AwexTest {
             }
         };
 
-        Promise<Void> waitingPromise = mAwex.submit(someWaitingTask);
-        Promise<Void> realTimePromise = mAwex.submit(realTimeTask);
+        Promise<Void, Void> waitingPromise = mAwex.submit(someWaitingTask);
+        Promise<Void, Void> realTimePromise = mAwex.submit(realTimeTask);
 
         realTimePromise.getResult();
 
@@ -280,14 +280,14 @@ public class AwexTest {
             }
         };
 
-        Promise<Void> waitingPromise = mAwex.submit(someWaitingTask);
+        Promise<Void, Void> waitingPromise = mAwex.submit(someWaitingTask);
         mAwex.submit(new VoidTask() {
             @Override
             protected void runWithoutResult() throws InterruptedException {
 
             }
         });
-        Promise<Void> realTimePromise = mAwex.submit(realTimeTask);
+        Promise<Void, Void> realTimePromise = mAwex.submit(realTimeTask);
 
         realTimePromise.getResult();
 
@@ -299,8 +299,8 @@ public class AwexTest {
     public void shouldCreateAllOfPromise() {
         setUpAwex();
 
-        Promise<Collection<Integer>> allOfPromise = mAwex.allOf(new AwexPromise<Integer>(mAwex),
-                new AwexPromise<Integer>(mAwex));
+        Promise<Collection<Integer>, Float> allOfPromise = mAwex.allOf(new AwexPromise<Integer, Float>(mAwex),
+                new AwexPromise<Integer, Float>(mAwex));
 
         assertThat(allOfPromise, instanceOf(AllOfPromise.class));
     }
@@ -309,8 +309,8 @@ public class AwexTest {
     public void shouldCreateAnyOfPromise() {
         setUpAwex();
 
-        Promise<Integer> anyOfPromise = mAwex.anyOf(new AwexPromise<Integer>(mAwex),
-                new AwexPromise<Integer>(mAwex));
+        Promise<Integer, Float> anyOfPromise = mAwex.anyOf(new AwexPromise<Integer, Float>(mAwex),
+                new AwexPromise<Integer, Float>(mAwex));
 
         assertThat(anyOfPromise, instanceOf(AnyOfPromise.class));
     }
@@ -319,9 +319,9 @@ public class AwexTest {
     public void shouldCreateAfterAllPromise() {
         setUpAwex();
 
-        Promise<MultipleResult<Integer>> afterAllPromise = mAwex.afterAll(
-                new AwexPromise<Integer>(mAwex),
-                new AwexPromise<Integer>(mAwex));
+        Promise<MultipleResult<Integer, Float>, Float> afterAllPromise = mAwex.afterAll(
+                new AwexPromise<Integer, Float>(mAwex),
+                new AwexPromise<Integer, Float>(mAwex));
 
         assertThat(afterAllPromise, instanceOf(AfterAllPromise.class));
     }
@@ -332,7 +332,7 @@ public class AwexTest {
 
         final Semaphore semaphore = new Semaphore(0);
 
-        mAwex.submit(new Task<Integer>() {
+        mAwex.submit(new Task<Integer, Float>() {
 
             @Override
             protected Integer run() throws InterruptedException {
@@ -341,7 +341,7 @@ public class AwexTest {
             }
         });
 
-        mTaskPromise = mAwex.submit(new Task<Integer>(Task.PRIORITY_NORMAL, 500, 500) {
+        mTaskPromise = mAwex.submit(new Task<Integer, Float>(Task.PRIORITY_NORMAL, 500, 500) {
             @Override
             protected Integer run() throws InterruptedException {
                 return SOME_VALUE;
@@ -365,7 +365,7 @@ public class AwexTest {
 
         final Semaphore semaphore = new Semaphore(0);
 
-        mTaskPromise = mAwex.submit(new Task<Integer>(Task.PRIORITY_NORMAL, 500, 500) {
+        mTaskPromise = mAwex.submit(new Task<Integer, Float>(Task.PRIORITY_NORMAL, 500, 500) {
             @Override
             protected Integer run() throws InterruptedException {
                 semaphore.acquire();

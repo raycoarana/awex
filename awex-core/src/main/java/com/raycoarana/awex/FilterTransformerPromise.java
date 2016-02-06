@@ -2,12 +2,12 @@ package com.raycoarana.awex;
 
 import com.raycoarana.awex.transform.Filter;
 
-public class FilterTransformerPromise<T> extends AbstractTransformerPromise<T, T> {
+public class FilterTransformerPromise<Result, Progress> extends AbstractTransformerPromise<Result, Result, Progress> {
 
-    public FilterTransformerPromise(Awex awex, Promise<T> promise, final Filter<T> filter) {
-        super(awex, promise, new Apply<T, T>() {
+    public FilterTransformerPromise(Awex awex, Promise<Result, Progress> promise, final Filter<Result> filter) {
+        super(awex, promise, new Apply<Result, Result>() {
             @Override
-            public T apply(T item) {
+            public Result apply(Result item) {
                 return filter.filter(item) ? item : null;
             }
         });

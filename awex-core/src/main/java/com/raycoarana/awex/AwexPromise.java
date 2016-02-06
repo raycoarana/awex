@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Implementation of task promise
  */
-class AwexPromise<T> implements Promise<T> {
+class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     protected final Awex mAwex;
 
@@ -31,12 +31,12 @@ class AwexPromise<T> implements Promise<T> {
     private final long mId;
 
     private int mState;
-    private T mResult;
+    private Result mResult;
     private Exception mException;
 
-    private final List<DoneCallback<T>> mDoneCallbacks = new ArrayList<>();
+    private final List<DoneCallback<Result>> mDoneCallbacks = new ArrayList<>();
     private final List<FailCallback> mFailCallbacks = new ArrayList<>();
-    private final List<ProgressCallback> mProgressCallbacks = new ArrayList<>();
+    private final List<ProgressCallback<Progress>> mProgressCallbacks = new ArrayList<>();
     private final List<CancelCallback> mCancelCallbacks = new ArrayList<>();
     private final List<AlwaysCallback> mAlwaysCallbacks = new ArrayList<>();
 
@@ -60,7 +60,7 @@ class AwexPromise<T> implements Promise<T> {
      * @param result value used to resolve the promise
      * @throws IllegalStateException if the promise is not in pending state
      */
-    public Promise<T> resolve(T result) {
+    public Promise<Result, Progress> resolve(Result result) {
         synchronized (this) {
             validateInPendingState();
 
@@ -89,13 +89,13 @@ class AwexPromise<T> implements Promise<T> {
 
     private void triggerAllDones() {
         synchronized (this) {
-            for (final DoneCallback<T> callback : mDoneCallbacks) {
+            for (final DoneCallback<Result> callback : mDoneCallbacks) {
                 triggerDone(callback);
             }
         }
     }
 
-    private void triggerDone(final DoneCallback<T> callback) {
+    private void triggerDone(final DoneCallback<Result> callback) {
         if (callback instanceof UIDoneCallback && !mUIThread.isCurrentThread()) {
             mUIThread.post(new CancellableRunnable() {
                 @Override
@@ -108,7 +108,7 @@ class AwexPromise<T> implements Promise<T> {
         }
     }
 
-    private void tryTrigger(DoneCallback<T> callback, T result) {
+    private void tryTrigger(DoneCallback<Result> callback, Result result) {
         try {
             callback.onDone(result);
         } catch (Exception ex) {
@@ -121,7 +121,7 @@ class AwexPromise<T> implements Promise<T> {
      *
      * @param ex exception that represents the rejection of the promise
      */
-    public Promise<T> reject(Exception ex) {
+    public Promise<Result, Progress> reject(Exception ex) {
         synchronized (this) {
             if (mState == STATE_CANCELLED) {
                 return this;
@@ -212,7 +212,7 @@ class AwexPromise<T> implements Promise<T> {
      * Notify progress to all callbacks
      * @param progress amount of progress
      */
-    public void notifyProgress(float progress) {
+    public void notifyProgress(Progress progress) {
         synchronized (this) {
             validateInPendingState();
 
@@ -224,13 +224,13 @@ class AwexPromise<T> implements Promise<T> {
         }
     }
 
-    private void triggerAllProgress(float progress) {
-        for (final ProgressCallback callback : mProgressCallbacks) {
+    private void triggerAllProgress(Progress progress) {
+        for (final ProgressCallback<Progress> callback : mProgressCallbacks) {
             triggerProgress(callback, progress);
         }
     }
 
-    private void triggerProgress(final ProgressCallback callback, final float progress) {
+    private void triggerProgress(final ProgressCallback<Progress> callback, final Progress progress) {
         if (callback instanceof UIProgressCallback && !mUIThread.isCurrentThread()) {
             mUIThread.post(new CancellableRunnable() {
                 @Override
@@ -243,7 +243,7 @@ class AwexPromise<T> implements Promise<T> {
         }
     }
 
-    private void tryTrigger(ProgressCallback callback, float progress) {
+    private void tryTrigger(ProgressCallback<Progress> callback, Progress progress) {
         try {
             callback.onProgress(progress);
         } catch (Exception ex) {
@@ -363,7 +363,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public T getResult() throws Exception {
+    public Result getResult() throws Exception {
         synchronized (this) {
             blockWhilePending();
 
@@ -379,7 +379,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public T getResultOrDefault(T defaultValue) throws InterruptedException {
+    public Result getResultOrDefault(Result defaultValue) throws InterruptedException {
         synchronized (this) {
             blockWhilePending();
 
@@ -407,7 +407,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> done(final DoneCallback<T> callback) {
+    public Promise<Result, Progress> done(final DoneCallback<Result> callback) {
         synchronized (this) {
             switch (mState) {
                 case STATE_PENDING:
@@ -432,12 +432,12 @@ class AwexPromise<T> implements Promise<T> {
         return this;
     }
 
-    private boolean shouldExecuteInBackground(DoneCallback<T> callback) {
+    private boolean shouldExecuteInBackground(DoneCallback<Result> callback) {
         return mUIThread.isCurrentThread() && !(callback instanceof UIDoneCallback);
     }
 
     @Override
-    public Promise<T> fail(final FailCallback callback) {
+    public Promise<Result, Progress> fail(final FailCallback callback) {
         synchronized (this) {
             switch (mState) {
                 case STATE_PENDING:
@@ -466,7 +466,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> progress(final ProgressCallback callback) {
+    public Promise<Result, Progress> progress(final ProgressCallback<Progress> callback) {
         synchronized (this) {
             switch (mState) {
                 case STATE_PENDING:
@@ -478,7 +478,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> cancel(final CancelCallback callback) {
+    public Promise<Result, Progress> cancel(final CancelCallback callback) {
         synchronized (this) {
             switch (mState) {
                 case STATE_PENDING:
@@ -507,7 +507,7 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> always(final AlwaysCallback callback) {
+    public Promise<Result, Progress> always(final AlwaysCallback callback) {
         synchronized (this) {
             switch (mState) {
                 case STATE_PENDING:
@@ -533,13 +533,13 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> or(Promise<T> promise) {
+    public Promise<Result, Progress> or(Promise<Result, Progress> promise) {
         return new OrPromise<>(mAwex, this, promise);
     }
 
     @Override
-    public Promise<Collection<T>> and(Promise<T> promise) {
-        List<Promise<T>> promises = Arrays.asList(this, promise);
+    public Promise<Collection<Result>, Progress> and(Promise<Result, Progress> promise) {
+        List<Promise<Result, Progress>> promises = Arrays.asList(this, promise);
         return new AllOfPromise<>(mAwex, promises);
     }
 
@@ -552,17 +552,17 @@ class AwexPromise<T> implements Promise<T> {
     }
 
     @Override
-    public <U> Promise<U> mapSingle(Mapper<T, U> mapper) {
+    public <U> Promise<U, Progress> mapSingle(Mapper<Result, U> mapper) {
         return new MapperTransformerPromise<>(mAwex, this, mapper);
     }
 
     @Override
-    public Promise<T> filterSingle(Filter<T> filter) {
+    public Promise<Result, Progress> filterSingle(Filter<Result> filter) {
         return new FilterTransformerPromise<>(mAwex, this, filter);
     }
 
     @Override
-    public <U> CollectionPromise<U> stream() {
+    public <R> CollectionPromise<R, Progress> stream() {
         return new AwexCollectionPromise<>(mAwex, this);
     }
 

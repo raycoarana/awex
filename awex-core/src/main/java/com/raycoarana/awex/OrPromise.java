@@ -5,12 +5,12 @@ import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.exceptions.OrException;
 
-class OrPromise<T> extends AwexPromise<T> {
+class OrPromise<T, P> extends AwexPromise<T, P> {
 
-    private final Promise<T> mMainPromise;
-    private final Promise<T> mSecondChoicePromise;
+    private final Promise<T, P> mMainPromise;
+    private final Promise<T, P> mSecondChoicePromise;
 
-    public OrPromise(Awex awex, Promise<T> mainPromise, Promise<T> secondChoicePromise) {
+    public OrPromise(Awex awex, Promise<T, P> mainPromise, Promise<T, P> secondChoicePromise) {
         super(awex);
 
         mMainPromise = mainPromise;

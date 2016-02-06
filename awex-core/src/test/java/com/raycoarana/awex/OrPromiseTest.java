@@ -11,9 +11,9 @@ public class OrPromiseTest extends BasePromiseTest {
 
     private static final Integer SOME_RESULT_VALUE = 42;
 
-    private AwexPromise<Integer> mMainPromise;
-    private AwexPromise<Integer> mSecondChoicePromise;
-    private OrPromise<Integer> mOrPromise;
+    private AwexPromise<Integer, Float> mMainPromise;
+    private AwexPromise<Integer, Float> mSecondChoicePromise;
+    private OrPromise<Integer, Float> mOrPromise;
 
     @Test
     public void shouldReturnValueOfMainPromise() throws Exception {

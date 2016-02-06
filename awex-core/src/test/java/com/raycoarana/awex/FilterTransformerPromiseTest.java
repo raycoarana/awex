@@ -8,8 +8,8 @@ import static org.junit.Assert.assertEquals;
 
 public class FilterTransformerPromiseTest extends BasePromiseTest {
 
-    private AwexPromise<Integer> mPromise;
-    private Promise<Integer> mFilteredValue;
+    private AwexPromise<Integer, Float> mPromise;
+    private Promise<Integer, Float> mFilteredValue;
 
     @Test
     public void shouldFilterAResolvedPromiseWithSingleValue() throws Exception {

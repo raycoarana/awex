@@ -5,7 +5,7 @@ package com.raycoarana.awex;
  *
  * @see Task
  */
-public abstract class VoidTask extends Task<Void> {
+public abstract class VoidTask extends Task<Void, Void> {
 
     public VoidTask() {
         super();

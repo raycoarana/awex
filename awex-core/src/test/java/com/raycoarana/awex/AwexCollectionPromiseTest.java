@@ -12,13 +12,13 @@ import static org.junit.Assert.assertEquals;
 
 public class AwexCollectionPromiseTest extends BasePromiseTest {
 
-    private Promise<Collection<Integer>> mPromise;
+    private Promise<Collection<Integer>, Float> mPromise;
 
     @Test
     public void shouldGetFirstItemOfCollection() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexCollectionPromise<Integer>(mAwex).resolve(Arrays.asList(1, 2));
+        mPromise = new AwexCollectionPromise<Integer, Float>(mAwex).resolve(Arrays.asList(1, 2));
 
         assertEquals(1, (int) mPromise.<Integer>stream().singleOrFirst().getResult());
     }
@@ -27,7 +27,7 @@ public class AwexCollectionPromiseTest extends BasePromiseTest {
     public void shouldGetTheOnlyExistingItem() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexPromise<Integer>(mAwex).resolve(1).stream();
+        mPromise = new AwexPromise<Integer, Float>(mAwex).resolve(1).stream();
 
         assertEquals(1, (int) mPromise.<Integer>stream().singleOrFirst().getResult());
     }
@@ -36,7 +36,7 @@ public class AwexCollectionPromiseTest extends BasePromiseTest {
     public void shouldFailToGetResultOfCancelledPromise() throws Exception {
         setUpAwex();
 
-        mPromise = new AwexCollectionPromise<Integer>(mAwex).resolve(Collections.<Integer>emptyList());
+        mPromise = new AwexCollectionPromise<Integer, Float>(mAwex).resolve(Collections.<Integer>emptyList());
 
         mPromise.<Integer>stream().singleOrFirst().getResult();
     }

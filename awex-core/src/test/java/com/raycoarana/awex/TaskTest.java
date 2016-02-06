@@ -8,20 +8,20 @@ public class TaskTest {
 
     @Test(expected = IllegalStateException.class)
     public void shouldFailToResetNotSubmittedTask() {
-        Task<Integer> task = givenSomeTask();
+        Task<Integer, Float> task = givenSomeTask();
 
         task.reset();
     }
 
     @Test(expected = IllegalStateException.class)
     public void shouldFailToGetPromiseNotSubmittedTask() {
-        Task<Integer> task = givenSomeTask();
+        Task<Integer, Float> task = givenSomeTask();
 
         task.getPromise();
     }
 
-    private Task<Integer> givenSomeTask() {
-        return new Task<Integer>() {
+    private Task<Integer, Float> givenSomeTask() {
+        return new Task<Integer, Float>() {
                 @Override
                 protected Integer run() throws InterruptedException {
                     return SOME_VALUE;

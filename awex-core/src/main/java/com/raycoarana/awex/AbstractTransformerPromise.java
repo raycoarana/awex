@@ -5,11 +5,11 @@ import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
 
-abstract class AbstractTransformerPromise<T, U> extends AwexPromise<U> {
+abstract class AbstractTransformerPromise<T, U, P> extends AwexPromise<U, P> {
 
     protected final Apply<T, U> mApply;
 
-    public AbstractTransformerPromise(Awex awex, Promise<T> promise, Apply<T, U> apply) {
+    public AbstractTransformerPromise(Awex awex, Promise<T, P> promise, Apply<T, U> apply) {
         super(awex);
 
         mApply = apply;

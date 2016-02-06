@@ -1,18 +1,18 @@
 package com.raycoarana.awex;
 
-public class MultipleResult<T> {
+public class MultipleResult<Result, Progress> {
 
-    private final Promise<T>[] mPromises;
-    private final T[] mResults;
+    private final Promise<Result, Progress>[] mPromises;
+    private final Result[] mResults;
     private final Exception[] mErrors;
 
-    public MultipleResult(Promise<T>[] promises, T[] results, Exception[] errors) {
+    public MultipleResult(Promise<Result, Progress>[] promises, Result[] results, Exception[] errors) {
         mPromises = promises;
         mResults = results;
         mErrors = errors;
     }
 
-    public T getResult(int index) throws Exception {
+    public Result getResult(int index) throws Exception {
         switch (getState(index)) {
             case Promise.STATE_PENDING:
             case Promise.STATE_CANCELLED:
@@ -24,7 +24,7 @@ public class MultipleResult<T> {
         }
     }
 
-    public T getResultOrDefault(int index, T defaultValue) {
+    public Result getResultOrDefault(int index, Result defaultValue) {
         switch (getState(index)) {
             case Promise.STATE_PENDING:
             case Promise.STATE_CANCELLED:

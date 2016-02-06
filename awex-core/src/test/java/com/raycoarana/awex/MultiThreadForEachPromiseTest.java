@@ -16,9 +16,9 @@ public class MultiThreadForEachPromiseTest extends BasePromiseTest {
     public void shouldIterateOverAllItemsOfAResolvedPromise() throws Exception {
         setUpAwex();
 
-        AwexPromise<Collection<Item>> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Collection<Item>, Float> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
 
-        CollectionPromise<Item> mResultPromise = mCollectionPromise.<Item>stream().forEachParallel(new Func<Item>() {
+        CollectionPromise<Item, Float> mResultPromise = mCollectionPromise.<Item>stream().forEachParallel(new Func<Item>() {
             @Override
             public void run(Item item) {
                 item.setValue(item.getValue() + 1);

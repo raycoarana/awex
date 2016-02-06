@@ -73,7 +73,7 @@ public class Awex {
         return mWorkIdProvider.incrementAndGet();
     }
 
-    public <T> Promise<T> submit(final Task<T> task) {
+    public <Result, Progress> Promise<Result, Progress> submit(final Task<Result, Progress> task) {
         synchronized (this) {
             task.initialize(this);
             PoolState poolState = extractPoolState();
@@ -114,7 +114,7 @@ public class Awex {
         mCallbackExecutor.submit(runnable);
     }
 
-    public <T> void cancel(Task<T> task, boolean mayInterrupt) {
+    public <Result, Progress> void cancel(Task<Result, Progress> task, boolean mayInterrupt) {
         synchronized (this) {
             task.softCancel();
             AwexTaskQueue taskQueue = task.getQueue();
@@ -134,13 +134,14 @@ public class Awex {
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
      * promises is rejected the created promise will be rejected.
      *
-     * @param promises source pormises
-     * @param <T>      type of result of the promises
+     * @param promises source promises
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
      */
     @SafeVarargs
-    public final <T> Promise<Collection<T>> allOf(Promise<T>... promises) {
+    public final <Result, Progress> Promise<Collection<Result>, Progress> allOf(Promise<Result, Progress>... promises) {
         return allOf(Arrays.asList(promises));
     }
 
@@ -148,37 +149,40 @@ public class Awex {
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
      * promises is rejected the created promise will be rejected.
      *
-     * @param promises source pormises
-     * @param <T>      type of result of the promises
+     * @param promises source promises
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
      */
-    public <T> Promise<Collection<T>> allOf(Collection<Promise<T>> promises) {
+    public <Result, Progress> Promise<Collection<Result>, Progress> allOf(Collection<Promise<Result, Progress>> promises) {
         return new AllOfPromise<>(this, promises);
     }
 
     /**
      * Creates a new promise that will be resolved if any promise get resolved.
      *
-     * @param promises source pormises
-     * @param <T>      type of result of the promises
+     * @param promises source promises
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
      */
     @SafeVarargs
-    public final <T> Promise<T> anyOf(Promise<T>... promises) {
+    public final <Result, Progress> Promise<Result, Progress> anyOf(Promise<Result, Progress>... promises) {
         return anyOf(Arrays.asList(promises));
     }
 
     /**
      * Creates a new promise that will be resolved if any promise get resolved.
      *
-     * @param promises source pormises
-     * @param <T>      type of result of the promises
+     * @param promises source promises
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
      */
-    public <T> Promise<T> anyOf(Collection<Promise<T>> promises) {
+    public <Result, Progress> Promise<Result, Progress> anyOf(Collection<Promise<Result, Progress>> promises) {
         return new AnyOfPromise<>(this, promises);
     }
 
@@ -186,12 +190,13 @@ public class Awex {
      * Creates a new promise that will be resolved when all promises finishes its execution, that
      * is, get resolved or rejected.
      *
-     * @param promises source pormises
-     * @param <T>      type of result of the promises
+     * @param promises source promises
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
     @SafeVarargs
-    public final <T> Promise<MultipleResult<T>> afterAll(Promise<T>... promises) {
+    public final <Result, Progress> Promise<MultipleResult<Result, Progress>, Progress> afterAll(Promise<Result, Progress>... promises) {
         return afterAll(Arrays.asList(promises));
     }
 
@@ -199,11 +204,12 @@ public class Awex {
      * Creates a new promise that will be resolved when all promises finishes its execution, that
      * is, get resolved or rejected.
      *
-     * @param promises source pormises
-     * @param <T>      type of result of the promises
+     * @param promises source promises
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
-    public <T> Promise<MultipleResult<T>> afterAll(Collection<Promise<T>> promises) {
+    public <Result, Progress> Promise<MultipleResult<Result, Progress>, Progress> afterAll(Collection<Promise<Result, Progress>> promises) {
         return new AfterAllPromise<>(this, promises);
     }
 
@@ -211,33 +217,34 @@ public class Awex {
      * Creates an already resolved promise with the value passed as parameter
      *
      * @param value value to use to resolve the promise, in case that the value is null a rejected promise is returned
-     * @param <T>   type of the result
+     * @param <Result>   type of the result
      * @return a promise already resolved
      */
     @SuppressWarnings("unchecked")
-    public <T> Promise<T> of(T value) {
+    public <Result, Progress> Promise<Result, Progress> of(Result value) {
         if (value == null) {
-            return (Promise<T>) mAbsentPromise;
+            return (Promise<Result, Progress>) mAbsentPromise;
         } else {
-            AwexPromise<T> promise = new AwexPromise<>(this);
+            AwexPromise<Result, Progress> promise = new AwexPromise<>(this);
             promise.resolve(value);
             return promise;
         }
     }
 
-    public <T> AwexPromise<T> newAwexPromise() {
+    public <Result, Progress> AwexPromise<Result, Progress> newAwexPromise() {
         return new AwexPromise<>(this);
     }
 
     /**
      * Returns an already rejected promise
      *
-     * @param <T> type of result
+     * @param <Result> type of result
+     * @param <Progress> type of progress
      * @return a promise already rejected
      */
     @SuppressWarnings("unchecked")
-    public <T> Promise<T> absent() {
-        return (Promise<T>) mAbsentPromise;
+    public <Result, Progress> Promise<Result, Progress> absent() {
+        return (Promise<Result, Progress>) mAbsentPromise;
     }
 
     int getNumberOfThreads() {
@@ -250,11 +257,11 @@ public class Awex {
         }
     }
 
-    <T> void onTaskQueueTimeout(Task<T> task) {
+    <Result, Progress> void onTaskQueueTimeout(Task<Result, Progress> task) {
         mPoolPolicy.onTaskQueueTimeout(extractPoolState(), task);
     }
 
-    <T> void onTaskExecutionTimeout(Task<T> task) {
+    <Result, Progress> void onTaskExecutionTimeout(Task<Result, Progress> task) {
         mPoolPolicy.onTaskExecutionTimeout(extractPoolState(), task);
     }
 
@@ -335,7 +342,7 @@ public class Awex {
                 }
             }).progress(new ProgressCallback() {
                 @Override
-                public void onProgress(float progress) {
+                public void onProgress(Object progress) {
                     promiseToMerge.notifyProgress(progress);
                 }
             }).cancel(new CancelCallback() {

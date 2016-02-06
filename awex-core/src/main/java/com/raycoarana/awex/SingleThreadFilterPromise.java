@@ -2,12 +2,12 @@ package com.raycoarana.awex;
 
 import com.raycoarana.awex.transform.Filter;
 
-public class SingleThreadFilterPromise<T> extends AbstractSingleThreadPromise<T, T> {
+public class SingleThreadFilterPromise<Result, Progress> extends AbstractSingleThreadPromise<Result, Result, Progress> {
 
-    public SingleThreadFilterPromise(Awex awex, CollectionPromise<T> promise, final Filter<T> filter) {
-        super(awex, promise, new Apply<T, T>() {
+    public SingleThreadFilterPromise(Awex awex, CollectionPromise<Result, Progress> promise, final Filter<Result> filter) {
+        super(awex, promise, new Apply<Result, Result>() {
             @Override
-            public T apply(T item) {
+            public Result apply(Result item) {
                 return filter.filter(item) ? item : null;
             }
         });

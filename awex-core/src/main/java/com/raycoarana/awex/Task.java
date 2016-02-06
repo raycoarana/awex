@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @see VoidTask for tasks that doesn't returns any object
  */
-public abstract class Task<T> {
+public abstract class Task<Result, Progress> {
 
     public static final int STATE_NOT_INITIALIZED = -1;
     public static final int STATE_NOT_QUEUE = 0;
@@ -32,7 +32,7 @@ public abstract class Task<T> {
     private Awex mAwex;
     private long mId;
     private Logger mLogger;
-    private AwexPromise<T> mPromise;
+    private AwexPromise<Result, Progress> mPromise;
     private int mCurrentState = STATE_NOT_INITIALIZED;
     private Worker mWorker;
     private AwexTaskQueue mTaskQueue;
@@ -122,7 +122,7 @@ public abstract class Task<T> {
     protected void onReset() {
     }
 
-    public Promise<T> getPromise() {
+    public Promise<Result, Progress> getPromise() {
         checkInitialized();
         return mPromise;
     }
@@ -133,7 +133,7 @@ public abstract class Task<T> {
         }
     }
 
-    protected abstract T run() throws InterruptedException;
+    protected abstract Result run() throws InterruptedException;
 
     final ReentrantLock lock = new ReentrantLock();
 
@@ -145,7 +145,7 @@ public abstract class Task<T> {
         printStateChanged("RUNNING");
         mAwex.schedule(mExecutionTimeoutTimerTask, mExecutionTimeout);
 
-        T result = null;
+        Result result = null;
         try {
             result = run();
         } catch (InterruptedException ex) {
@@ -164,7 +164,7 @@ public abstract class Task<T> {
         resolveWithResult(result);
     }
 
-    private void resolveWithResult(T result) {
+    private void resolveWithResult(Result result) {
         try {
             lock.lock();
 

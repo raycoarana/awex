@@ -30,13 +30,13 @@ public class PoolManagerTest {
 
     @Test
     public void shouldCreateAndRemoveQueuesAndWorkers() throws Exception {
-        final Task<Integer> firstTask = new Task<Integer>() {
+        final Task<Integer, Void> firstTask = new Task<Integer, Void>() {
             @Override
             protected Integer run() throws InterruptedException {
                 return SOME_VALUE;
             }
         };
-        Task<Integer> secondTask = new Task<Integer>() {
+        Task<Integer, Void> secondTask = new Task<Integer, Void>() {
             @Override
             protected Integer run() throws InterruptedException {
                 return SOME_OTHER_VALUE;
@@ -91,7 +91,7 @@ public class PoolManagerTest {
         assertEquals("[  ]", mAwex.toString());
     }
 
-    class StaticValueTask extends Task<Integer> {
+    class StaticValueTask extends Task<Integer, Void> {
 
         private final int mValueToReturn;
 
@@ -118,8 +118,8 @@ public class PoolManagerTest {
 
     @Test
     public void shouldMergeTaskResult() throws Exception {
-        final Task<Integer> firstTask = new StaticValueTask(SOME_VALUE);
-        Task<Integer> secondTask = new StaticValueTask(SOME_OTHER_VALUE);
+        final Task<Integer, Void> firstTask = new StaticValueTask(SOME_VALUE);
+        Task<Integer, Void> secondTask = new StaticValueTask(SOME_OTHER_VALUE);
 
         setUpAwex(new PoolPolicy() {
             @Override
@@ -169,8 +169,8 @@ public class PoolManagerTest {
 
     @Test
     public void shouldRemoveWorker() throws Exception {
-        final Task<Integer> firstTask = new StaticValueTask(SOME_VALUE);
-        Task<Integer> secondTask = new StaticValueTask(SOME_OTHER_VALUE);
+        final Task<Integer, Void> firstTask = new StaticValueTask(SOME_VALUE);
+        Task<Integer, Void> secondTask = new StaticValueTask(SOME_OTHER_VALUE);
 
         setUpAwex(new PoolPolicy() {
             public int secondWorkerId;

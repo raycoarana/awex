@@ -7,25 +7,25 @@ import com.raycoarana.awex.exceptions.AllFailException;
 
 import java.util.Collection;
 
-class AnyOfPromise<T> extends AwexPromise<T> {
+class AnyOfPromise<Result, Progress> extends AwexPromise<Result, Progress> {
 
-    private final Collection<Promise<T>> mPromises;
+    private final Collection<Promise<Result, Progress>> mPromises;
     private final Exception[] mExceptions;
 
     private int mFailedPromises = 0;
 
     @SuppressWarnings("unchecked")
-    public AnyOfPromise(Awex awex, Collection<Promise<T>> promises) {
+    public AnyOfPromise(Awex awex, Collection<Promise<Result, Progress>> promises) {
         super(awex);
 
         mExceptions = new Exception[promises.size()];
         mPromises = promises;
 
-        DoneCallback<T> mDoneCallback = buildDoneCallback();
+        DoneCallback<Result> mDoneCallback = buildDoneCallback();
         CancelCallback mCancelCallback = buildCancelCallback();
 
         int i = 0;
-        for (Promise<T> promise : mPromises) {
+        for (Promise<Result, Progress> promise : mPromises) {
             final int promiseIndex = i;
             promise.done(mDoneCallback).fail(new FailCallback() {
                 @Override
@@ -46,10 +46,10 @@ class AnyOfPromise<T> extends AwexPromise<T> {
         }
     }
 
-    private DoneCallback<T> buildDoneCallback() {
-        return new DoneCallback<T>() {
+    private DoneCallback<Result> buildDoneCallback() {
+        return new DoneCallback<Result>() {
             @Override
-            public void onDone(T result) {
+            public void onDone(Result result) {
                 synchronized (AnyOfPromise.this) {
                     if (getState() == STATE_PENDING) {
                         resolve(result);
@@ -77,7 +77,7 @@ class AnyOfPromise<T> extends AwexPromise<T> {
         synchronized (this) {
             super.cancelTask(mayInterrupt);
 
-            for (Promise<T> promise : mPromises) {
+            for (Promise<Result, Progress> promise : mPromises) {
                 promise.cancelTask(mayInterrupt);
             }
         }

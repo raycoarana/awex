@@ -7,11 +7,11 @@ import com.raycoarana.awex.callbacks.FailCallback;
 import java.util.ArrayList;
 import java.util.Collection;
 
-abstract class AbstractSingleThreadPromise<T, U> extends AwexCollectionPromise<U> {
+abstract class AbstractSingleThreadPromise<T, U, P> extends AwexCollectionPromise<U, P> {
 
     protected final Apply<T, U> mApply;
 
-    public AbstractSingleThreadPromise(Awex awex, CollectionPromise<T> promise, Apply<T, U> apply) {
+    public AbstractSingleThreadPromise(Awex awex, CollectionPromise<T, P> promise, Apply<T, U> apply) {
         super(awex);
 
         mApply = apply;

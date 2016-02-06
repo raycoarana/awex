@@ -2,12 +2,12 @@ package com.raycoarana.awex;
 
 import com.raycoarana.awex.transform.Func;
 
-public class MultiThreadForEachPromise<T> extends AbstractMultiThreadPromise<T, T> {
+public class MultiThreadForEachPromise<Result, Progress> extends AbstractMultiThreadPromise<Result, Result, Progress> {
 
-    public MultiThreadForEachPromise(Awex awex, CollectionPromise<T> promise, final Func<T> func) {
-        super(awex, promise, new Apply<T, T>() {
+    public MultiThreadForEachPromise(Awex awex, CollectionPromise<Result, Progress> promise, final Func<Result> func) {
+        super(awex, promise, new Apply<Result, Result>() {
             @Override
-            public T apply(T item) {
+            public Result apply(Result item) {
                 func.run(item);
                 return item;
             }

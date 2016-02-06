@@ -11,14 +11,14 @@ import static org.junit.Assert.assertEquals;
 
 public class SingleThreadFilterPromiseTest extends BasePromiseTest {
 
-    private AwexPromise<Collection<Integer>> mPromise;
-    private CollectionPromise<Integer> mFilteredValue;
+    private AwexPromise<Collection<Integer>, Float> mPromise;
+    private CollectionPromise<Integer, Float> mFilteredValue;
 
     @Test
     public void shouldFilterAResolvedPromiseWithCollection() throws Exception {
         setUpAwex();
 
-        AwexPromise<Collection<Integer>> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Collection<Integer>, Float> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
 
         mFilteredValue = mCollectionPromise.<Integer>stream().filter(new Filter<Integer>() {
             @Override

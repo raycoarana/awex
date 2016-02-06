@@ -9,9 +9,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromise<T, U> {
+class AbstractMultiThreadPromise<T, U, Progress> extends AbstractSingleThreadPromise<T, U, Progress> {
 
-    public AbstractMultiThreadPromise(Awex awex, CollectionPromise<T> promise, Apply<T, U> filter) {
+    public AbstractMultiThreadPromise(Awex awex, CollectionPromise<T, Progress> promise, Apply<T, U> filter) {
         super(awex, promise, filter);
     }
 
@@ -19,11 +19,11 @@ class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromise<T, U>
     protected void apply(Collection<T> items) {
         int numberOfThreads = mAwex.getNumberOfThreads();
         Collection<List<T>> itemsGroupedByThread = split(items, numberOfThreads);
-        Collection<Promise<Collection<U>>> promises = launchAll(itemsGroupedByThread);
-        AfterAllPromise<Collection<U>> afterAll = new AfterAllPromise<>(mAwex, promises);
-        afterAll.done(new DoneCallback<MultipleResult<Collection<U>>>() {
+        Collection<Promise<Collection<U>, Progress>> promises = launchAll(itemsGroupedByThread);
+        AfterAllPromise<Collection<U>, Progress> afterAll = new AfterAllPromise<>(mAwex, promises);
+        afterAll.done(new DoneCallback<MultipleResult<Collection<U>, Progress>>() {
             @Override
-            public void onDone(MultipleResult<Collection<U>> result) {
+            public void onDone(MultipleResult<Collection<U>, Progress> result) {
                 Collection<U> resultItems = new ArrayList<>();
                 for (int i = 0; i < result.getCount(); i++) {
                     Collection<U> items = result.getResultOrDefault(i, Collections.<U>emptyList());
@@ -58,10 +58,10 @@ class AbstractMultiThreadPromise<T, U> extends AbstractSingleThreadPromise<T, U>
         return listOfGroups;
     }
 
-    private Collection<Promise<Collection<U>>> launchAll(Collection<List<T>> itemsGroupedByThread) {
-        List<Promise<Collection<U>>> allPromises = new ArrayList<>();
+    private Collection<Promise<Collection<U>, Progress>> launchAll(Collection<List<T>> itemsGroupedByThread) {
+        List<Promise<Collection<U>, Progress>> allPromises = new ArrayList<>();
         for (final Collection<T> items : itemsGroupedByThread) {
-            Promise<Collection<U>> promise = mAwex.submit(new Task<Collection<U>>() {
+            Promise<Collection<U>, Progress> promise = mAwex.submit(new Task<Collection<U>, Progress>() {
                 @Override
                 protected Collection<U> run() throws InterruptedException {
                     return AbstractMultiThreadPromise.super.applyToCollection(items);

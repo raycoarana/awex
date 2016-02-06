@@ -50,10 +50,10 @@ public class AwexPromiseTest extends BasePromiseTest {
     private UIFailCallback mUIFailCallback;
 
     @Mock
-    private ProgressCallback mProgressCallback;
+    private ProgressCallback<Float> mProgressCallback;
 
     @Mock
-    private UIProgressCallback mUIProgressCallback;
+    private UIProgressCallback<Float> mUIProgressCallback;
 
     @Mock
     private AlwaysCallback mAlwaysCallback;
@@ -67,7 +67,7 @@ public class AwexPromiseTest extends BasePromiseTest {
     @Mock
     private UICancelCallback mUICancelCallback;
 
-    private AwexPromise<Integer> mPromise;
+    private AwexPromise<Integer, Float> mPromise;
 
     @Test
     public void shouldCreateAValidPromise() {
@@ -459,9 +459,9 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mTask);
-        mPromise.progress(new ProgressCallback() {
+        mPromise.progress(new ProgressCallback<Float>() {
             @Override
-            public void onProgress(float progress) {
+            public void onProgress(Float progress) {
                 throw new RuntimeException("Some error!");
             }
         });
@@ -501,7 +501,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mTask);
-        Promise<Integer> anyOfPromise = mPromise.or(new AwexPromise<Integer>(mAwex, mTask));
+        Promise<Integer, Float> anyOfPromise = mPromise.or(new AwexPromise<Integer, Float>(mAwex, mTask));
 
         assertThat(anyOfPromise, instanceOf(OrPromise.class));
     }
@@ -511,7 +511,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         setUpAwex();
 
         mPromise = new AwexPromise<>(mAwex, mTask);
-        Promise<Collection<Integer>> allOfPromise = mPromise.and(new AwexPromise<Integer>(mAwex, mTask));
+        Promise<Collection<Integer>, Float> allOfPromise = mPromise.and(new AwexPromise<Integer, Float>(mAwex, mTask));
 
         assertThat(allOfPromise, instanceOf(AllOfPromise.class));
     }

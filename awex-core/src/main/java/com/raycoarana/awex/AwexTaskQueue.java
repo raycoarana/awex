@@ -40,7 +40,7 @@ class AwexTaskQueue {
         mTaskQueue.offer(task);
     }
 
-    public synchronized <T> boolean remove(Task<T> task) {
+    public synchronized <Result, Progress> boolean remove(Task<Result, Progress> task) {
         if (mDie) {
             throw new IllegalStateException("Queue is die!");
         }

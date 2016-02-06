@@ -11,14 +11,14 @@ import static org.junit.Assert.assertEquals;
 
 public class SingleThreadMapperPromiseTest extends BasePromiseTest {
 
-    private AwexPromise<Collection<Integer>> mPromise;
-    private CollectionPromise<String> mMappedValue;
+    private AwexPromise<Collection<Integer>, Float> mPromise;
+    private CollectionPromise<String, Float> mMappedValue;
 
     @Test
     public void shouldMapAResolvedPromiseWithCollection() throws Exception {
         setUpAwex();
 
-        AwexPromise<Collection<Integer>> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Collection<Integer>, Float> mCollectionPromise = new AwexPromise<>(mAwex, mTask);
 
         mMappedValue = mCollectionPromise.<Integer>stream().map(new Mapper<Integer, String>() {
             @Override

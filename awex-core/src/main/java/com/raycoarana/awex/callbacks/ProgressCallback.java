@@ -1,7 +1,7 @@
 package com.raycoarana.awex.callbacks;
 
-public interface ProgressCallback {
+public interface ProgressCallback<Progress> {
 
-    void onProgress(float progress);
+    void onProgress(Progress progress);
 
 }

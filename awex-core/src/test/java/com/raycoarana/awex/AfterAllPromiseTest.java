@@ -16,10 +16,10 @@ public class AfterAllPromiseTest extends BasePromiseTest {
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     private static final Exception SOME_OTHER_EXCEPTION_VALUE = new Exception();
 
-    private AwexPromise<Integer> mFirstPromise;
-    private AwexPromise<Integer> mSecondPromise;
-    private AfterAllPromise<Integer> mAfterAllPromise;
-    private MultipleResult<Integer> mResult;
+    private AwexPromise<Integer, Float> mFirstPromise;
+    private AwexPromise<Integer, Float> mSecondPromise;
+    private AfterAllPromise<Integer, Float> mAfterAllPromise;
+    private MultipleResult<Integer, Float> mResult;
 
     @Test
     public void shouldReturnAllResultsWhenBothResolved() throws Exception {
@@ -70,7 +70,7 @@ public class AfterAllPromiseTest extends BasePromiseTest {
         mFirstPromise = new AwexPromise<>(mAwex, mTask);
         mSecondPromise = new AwexPromise<>(mAwex, mTask);
         mAfterAllPromise = new AfterAllPromise<>(mAwex,
-                Arrays.<Promise<Integer>>asList(mFirstPromise, mSecondPromise));
+                Arrays.<Promise<Integer, Float>>asList(mFirstPromise, mSecondPromise));
     }
 
 }

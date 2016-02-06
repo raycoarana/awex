@@ -8,8 +8,8 @@ import static org.junit.Assert.assertEquals;
 
 public class MapperTransformerPromiseTest extends BasePromiseTest {
 
-    private AwexPromise<Integer> mPromise;
-    private Promise<String> mMappedValue;
+    private AwexPromise<Integer, Float> mPromise;
+    private Promise<String, Float> mMappedValue;
 
     @Test
     public void shouldMapAResolvedPromiseWithSingleValue() throws Exception {

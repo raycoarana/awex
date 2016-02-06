@@ -10,7 +10,7 @@ import com.raycoarana.awex.transform.Mapper;
 
 import java.util.Collection;
 
-public interface Promise<T> {
+public interface Promise<Result, Progress> {
 
     /**
      * State: Task associated with this promise is executing and did not finish already
@@ -71,7 +71,7 @@ public interface Promise<T> {
      * @throws IllegalStateException if the state of the promise is STATE_CANCELLED
      * @throws Exception             an exception if the task fails to execute
      */
-    T getResult() throws Exception;
+    Result getResult() throws Exception;
 
     /**
      * Will block the current thread until the promise if resolved, rejected or cancelled. It will return
@@ -80,17 +80,17 @@ public interface Promise<T> {
      * @param defaultValue default value to return in case that the promise was rejected or cancelled
      * @return the result of the task if any
      */
-    T getResultOrDefault(T defaultValue) throws InterruptedException;
+    Result getResultOrDefault(Result defaultValue) throws InterruptedException;
 
-    Promise<T> done(DoneCallback<T> callback);
+    Promise<Result, Progress> done(DoneCallback<Result> callback);
 
-    Promise<T> fail(FailCallback callback);
+    Promise<Result, Progress> fail(FailCallback callback);
 
-    Promise<T> progress(ProgressCallback callback);
+    Promise<Result, Progress> progress(ProgressCallback<Progress> callback);
 
-    Promise<T> cancel(CancelCallback callback);
+    Promise<Result, Progress> cancel(CancelCallback callback);
 
-    Promise<T> always(AlwaysCallback callback);
+    Promise<Result, Progress> always(AlwaysCallback callback);
 
     /**
      * Returns a promise that will be resolved with the value of the first resolved promise or
@@ -99,7 +99,7 @@ public interface Promise<T> {
      * @param promise
      * @return
      */
-    Promise<T> or(Promise<T> promise);
+    Promise<Result, Progress> or(Promise<Result, Progress> promise);
 
     /**
      * Returns a promise that will be resolved if both promises have values or fail if the current
@@ -108,9 +108,9 @@ public interface Promise<T> {
      * @param promise
      * @return
      */
-    Promise<Collection<T>> and(Promise<T> promise);
+    Promise<Collection<Result>, Progress> and(Promise<Result, Progress> promise);
 
-    <U> Promise<U> mapSingle(Mapper<T, U> mapper);
+    <U> Promise<U, Progress> mapSingle(Mapper<Result, U> mapper);
 
     /**
      * Filters the item, if the result of the promise does not match the filter, the promise is rejected
@@ -118,7 +118,7 @@ public interface Promise<T> {
      * @param filter
      * @return
      */
-    Promise<T> filterSingle(Filter<T> filter);
+    Promise<Result, Progress> filterSingle(Filter<Result> filter);
 
     /**
      * Creates a collection promise from this promise. If this promise result is a collection,
@@ -126,6 +126,6 @@ public interface Promise<T> {
      *
      * @return
      */
-    <U> CollectionPromise<U> stream();
+    <T> CollectionPromise<T, Progress> stream();
 
 }
