@@ -9,16 +9,21 @@ import com.raycoarana.awex.Logger;
  */
 public class AndroidLogger implements Logger {
 
-	private static final String TAG = "AWEX";
+    private static final String TAG = "AWEX";
 
-	@Override
-	public void v(String message) {
-		Log.v(TAG, message);
-	}
+    @Override
+    public boolean isEnabled() {
+        return BuildConfig.DEBUG;
+    }
 
-	@Override
-	public void e(String message, Exception ex) {
-		Log.e(TAG, message, ex);
-	}
+    @Override
+    public void v(String message) {
+        Log.v(TAG, message);
+    }
+
+    @Override
+    public void e(String message, Exception ex) {
+        Log.e(TAG, message, ex);
+    }
 
 }

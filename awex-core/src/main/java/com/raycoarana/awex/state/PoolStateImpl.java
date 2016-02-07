@@ -11,7 +11,7 @@ import java.util.Set;
 public class PoolStateImpl implements PoolState {
 
     private final Map<Integer, QueueStateImpl> mQueueStateMap = new HashMap<>();
-    private final Map<Task, Task> mTasks = new HashMap<>();
+    private Map<Task, Task> mTasks;
 
     private PoolStateImpl() {
     }
@@ -39,10 +39,8 @@ public class PoolStateImpl implements PoolState {
         mQueueStateMap.put(queueId, queueState);
     }
 
-    public void addTasks(Set<Task> tasks) {
-        for (Task task : (tasks)) {
-            mTasks.put(task, task);
-        }
+    public void setTasks(Map<Task, Task> tasks) {
+        mTasks = tasks;
     }
 
     public void recycle() {
@@ -51,7 +49,6 @@ public class PoolStateImpl implements PoolState {
                 queueState.recycle();
             }
             mQueueStateMap.clear();
-            mTasks.clear();
             sObjectPool.add(this);
         }
     }

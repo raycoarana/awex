@@ -17,10 +17,33 @@ public class AwexPerf extends BasePerf {
 
     int numberOfTasks = 1000;
 
-    @Mock
-    private UIThread mUIThread;
-    @Mock
-    private Logger mLogger;
+    private UIThread mUIThread = new UIThread() {
+        @Override
+        public boolean isCurrentThread() {
+            return false;
+        }
+
+        @Override
+        public void post(Runnable runnable) {
+
+        }
+    };
+    private Logger mLogger = new Logger() {
+        @Override
+        public boolean isEnabled() {
+            return false;
+        }
+
+        @Override
+        public void v(String message) {
+
+        }
+
+        @Override
+        public void e(String message, Exception ex) {
+
+        }
+    };
 
     private Awex mAwex;
     private ExecutorService mThreadPool;

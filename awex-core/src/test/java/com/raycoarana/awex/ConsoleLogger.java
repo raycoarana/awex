@@ -3,6 +3,11 @@ package com.raycoarana.awex;
 public class ConsoleLogger implements Logger {
 
     @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
     public void v(String message) {
         System.out.println(message);
     }

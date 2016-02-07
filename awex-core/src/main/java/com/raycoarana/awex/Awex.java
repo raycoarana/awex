@@ -11,6 +11,7 @@ import com.raycoarana.awex.state.QueueStateImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +35,7 @@ public class Awex {
     private final AtomicInteger mThreadIdProvider = new AtomicInteger();
     private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
     private final Timer mTimer;
-    private final Set<Task> mTasks = new HashSet<>();
+    private final Map<Task, Task> mTasks = Collections.synchronizedMap(new HashMap<Task, Task>());
 
     private AwexPromise mAbsentPromise;
 
@@ -73,21 +74,17 @@ public class Awex {
     }
 
     public <Result, Progress> Promise<Result, Progress> submit(final Task<Result, Progress> task) {
-        synchronized (this) {
-            task.initialize(this);
-            PoolStateImpl poolState = extractPoolState();
-            mPoolPolicy.onTaskAdded(poolState, task);
-            poolState.recycle();
-        }
+        task.initialize(this);
+        PoolStateImpl poolState = extractPoolState();
+        mPoolPolicy.onTaskAdded(poolState, task);
+        poolState.recycle();
         return task.getPromise();
     }
 
     private PoolStateImpl extractPoolState() {
         PoolStateImpl poolState = PoolStateImpl.get();
         extractQueueState(poolState);
-        synchronized (mTasks) {
-            poolState.addTasks(mTasks);
-        }
+        poolState.setTasks(mTasks);
         return poolState;
     }
 
@@ -121,8 +118,8 @@ public class Awex {
                 if (!taskQueue.remove(task) && mayInterrupt) {
                     Worker worker = task.getWorker();
                     if (worker != null) {
-                        mWorkers.get(taskQueue.getId()).remove(worker.getId());
                         worker.interrupt();
+                        mWorkers.get(taskQueue.getId()).remove(worker.getId());
                     }
                 }
             }
@@ -133,8 +130,8 @@ public class Awex {
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
      * promises is rejected the created promise will be rejected.
      *
-     * @param promises source promises
-     * @param <Result> type of result of the promises
+     * @param promises   source promises
+     * @param <Result>   type of result of the promises
      * @param <Progress> type of progress of the promises
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
@@ -148,8 +145,8 @@ public class Awex {
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
      * promises is rejected the created promise will be rejected.
      *
-     * @param promises source promises
-     * @param <Result> type of result of the promises
+     * @param promises   source promises
+     * @param <Result>   type of result of the promises
      * @param <Progress> type of progress of the promises
      * @return a new promise that only will be resolve if all promises get resolved, otherwise it
      * will fail.
@@ -161,8 +158,8 @@ public class Awex {
     /**
      * Creates a new promise that will be resolved if any promise get resolved.
      *
-     * @param promises source promises
-     * @param <Result> type of result of the promises
+     * @param promises   source promises
+     * @param <Result>   type of result of the promises
      * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
@@ -175,8 +172,8 @@ public class Awex {
     /**
      * Creates a new promise that will be resolved if any promise get resolved.
      *
-     * @param promises source promises
-     * @param <Result> type of result of the promises
+     * @param promises   source promises
+     * @param <Result>   type of result of the promises
      * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolve if any promise get resolved, otherwise it
      * will fail.
@@ -189,8 +186,8 @@ public class Awex {
      * Creates a new promise that will be resolved when all promises finishes its execution, that
      * is, get resolved or rejected.
      *
-     * @param promises source promises
-     * @param <Result> type of result of the promises
+     * @param promises   source promises
+     * @param <Result>   type of result of the promises
      * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
@@ -203,8 +200,8 @@ public class Awex {
      * Creates a new promise that will be resolved when all promises finishes its execution, that
      * is, get resolved or rejected.
      *
-     * @param promises source promises
-     * @param <Result> type of result of the promises
+     * @param promises   source promises
+     * @param <Result>   type of result of the promises
      * @param <Progress> type of progress of the promises
      * @return a new promise that will be resolved when all promises finishes its execution.
      */
@@ -215,8 +212,8 @@ public class Awex {
     /**
      * Creates an already resolved promise with the value passed as parameter
      *
-     * @param value value to use to resolve the promise, in case that the value is null a rejected promise is returned
-     * @param <Result>   type of the result
+     * @param value    value to use to resolve the promise, in case that the value is null a rejected promise is returned
+     * @param <Result> type of the result
      * @return a promise already resolved
      */
     @SuppressWarnings("unchecked")
@@ -237,7 +234,7 @@ public class Awex {
     /**
      * Returns an already rejected promise
      *
-     * @param <Result> type of result
+     * @param <Result>   type of result
      * @param <Progress> type of progress
      * @return a promise already rejected
      */
@@ -280,9 +277,7 @@ public class Awex {
             PoolStateImpl poolState = extractPoolState();
             mPoolPolicy.onTaskFinished(poolState, task);
             poolState.recycle();
-            synchronized (mTasks) {
-                mTasks.remove(task);
-            }
+            mTasks.remove(task);
         }
 
     };
@@ -322,9 +317,7 @@ public class Awex {
             AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
             task.markQueue(taskQueue);
             taskQueue.insert(task);
-            synchronized (mTasks) {
-                mTasks.add(task);
-            }
+            mTasks.put(task, task);
         }
 
         @SuppressWarnings("unchecked")

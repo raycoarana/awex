@@ -207,7 +207,14 @@ public abstract class Task<Result, Progress> {
     }
 
     private void printStateChanged(String newState) {
-        mLogger.v("Task " + mId + " state changed to " + newState);
+        if (mLogger.isEnabled()) {
+            StringBuilder stringBuilder = new StringBuilder();
+            mLogger.v(stringBuilder.append("Task ")
+                    .append(mId)
+                    .append(" state changed to ")
+                    .append(newState)
+                    .toString());
+        }
     }
 
     final Worker getWorker() {

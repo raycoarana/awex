@@ -68,16 +68,9 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
             printStateChanged("RESOLVED");
             mResult = result;
             if (mDoneCallbacks.size() > 0 || mAlwaysCallbacks.size() > 0) {
-                mAwex.submit(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        triggerAllDones();
-                        triggerAllAlways();
-                        clearCallbacks();
-                    }
-
-                });
+                triggerAllDones();
+                triggerAllAlways();
+                clearCallbacks();
             } else {
                 clearCallbacks();
             }
@@ -132,16 +125,9 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
             printStateChanged("REJECTED");
             mException = ex;
             if (mFailCallbacks.size() > 0 || mAlwaysCallbacks.size() > 0) {
-                mAwex.submit(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        triggerAllFails();
-                        triggerAllAlways();
-                        clearCallbacks();
-                    }
-
-                });
+                triggerAllFails();
+                triggerAllAlways();
+                clearCallbacks();
             } else {
                 clearCallbacks();
             }
@@ -210,6 +196,7 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     /**
      * Notify progress to all callbacks
+     *
      * @param progress amount of progress
      */
     public void notifyProgress(Progress progress) {
@@ -548,7 +535,14 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
     }
 
     private void printStateChanged(String newState) {
-        mLogger.v("Promise of task " + mId + " changed to state " + newState);
+        if (mLogger.isEnabled()) {
+            StringBuilder stringBuilder = new StringBuilder();
+            mLogger.v(stringBuilder.append("Promise of task ")
+                    .append(mId)
+                    .append(" changed to state ")
+                    .append(newState)
+                    .toString());
+        }
     }
 
     @Override
