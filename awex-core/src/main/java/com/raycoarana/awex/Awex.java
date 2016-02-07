@@ -5,14 +5,12 @@ import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.callbacks.ProgressCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
-import com.raycoarana.awex.state.PoolState;
-import com.raycoarana.awex.state.QueueState;
-import com.raycoarana.awex.state.WorkerState;
+import com.raycoarana.awex.state.PoolStateImpl;
+import com.raycoarana.awex.state.QueueStateImpl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,8 +34,9 @@ public class Awex {
     private final AtomicInteger mThreadIdProvider = new AtomicInteger();
     private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
     private final Timer mTimer;
+    private final Set<Task> mTasks = new HashSet<>();
+
     private AwexPromise mAbsentPromise;
-    private Map<Task, Task> mTasks = new HashMap<>();
 
     public Awex(UIThread uiThread, Logger logger) {
         this(uiThread, logger, PoolPolicy.DEFAULT);
@@ -76,38 +75,38 @@ public class Awex {
     public <Result, Progress> Promise<Result, Progress> submit(final Task<Result, Progress> task) {
         synchronized (this) {
             task.initialize(this);
-            PoolState poolState = extractPoolState();
+            PoolStateImpl poolState = extractPoolState();
             mPoolPolicy.onTaskAdded(poolState, task);
+            poolState.recycle();
         }
         return task.getPromise();
     }
 
-    private PoolState extractPoolState() {
-        return new PoolState(extractQueueState(),
-                             Collections.synchronizedMap(Collections.unmodifiableMap(mTasks)));
+    private PoolStateImpl extractPoolState() {
+        PoolStateImpl poolState = PoolStateImpl.get();
+        extractQueueState(poolState);
+        synchronized (mTasks) {
+            poolState.addTasks(mTasks);
+        }
+        return poolState;
     }
 
-    private Map<Integer, QueueState> extractQueueState() {
+    private void extractQueueState(PoolStateImpl poolState) {
         List<AwexTaskQueue> queues = new ArrayList<>(mTaskQueueMap.values());
-        Map<Integer, QueueState> queueStates = new HashMap<>(queues.size());
         for (AwexTaskQueue queue : queues) {
-            QueueState queueState = new QueueState(queue.getId(),
+            QueueStateImpl queueState = QueueStateImpl.get(queue.getId(),
                     queue.size(),
-                    queue.waiters(),
-                    extractWorkersInfo(queue.getId()));
-            queueStates.put(queue.getId(), queueState);
+                    queue.waiters());
+            extractWorkersInfo(queueState);
+            poolState.addQueue(queue.getId(), queueState);
         }
-        return queueStates;
     }
 
-    private Map<Integer, WorkerState> extractWorkersInfo(int queueId) {
-        Set<Worker> workers = new HashSet<>(mWorkers.get(queueId).values());
-        Map<Integer, WorkerState> stateMap = new HashMap<>();
+    private void extractWorkersInfo(QueueStateImpl queueState) {
+        Set<Worker> workers = new HashSet<>(mWorkers.get(queueState.getId()).values());
         for (Worker worker : workers) {
-            stateMap.put(worker.getId(), worker.takeState());
+            queueState.addWorker(worker.getId(), worker.takeState());
         }
-
-        return stateMap;
     }
 
     void submit(Runnable runnable) {
@@ -258,11 +257,15 @@ public class Awex {
     }
 
     <Result, Progress> void onTaskQueueTimeout(Task<Result, Progress> task) {
-        mPoolPolicy.onTaskQueueTimeout(extractPoolState(), task);
+        PoolStateImpl poolState = extractPoolState();
+        mPoolPolicy.onTaskQueueTimeout(poolState, task);
+        poolState.recycle();
     }
 
     <Result, Progress> void onTaskExecutionTimeout(Task<Result, Progress> task) {
-        mPoolPolicy.onTaskExecutionTimeout(extractPoolState(), task);
+        PoolStateImpl poolState = extractPoolState();
+        mPoolPolicy.onTaskExecutionTimeout(poolState, task);
+        poolState.recycle();
     }
 
     @Override
@@ -274,8 +277,12 @@ public class Awex {
 
         @Override
         public void onTaskFinished(Task task) {
-            mPoolPolicy.onTaskFinished(extractPoolState(), task);
-            mTasks.remove(task);
+            PoolStateImpl poolState = extractPoolState();
+            mPoolPolicy.onTaskFinished(poolState, task);
+            poolState.recycle();
+            synchronized (mTasks) {
+                mTasks.remove(task);
+            }
         }
 
     };
@@ -315,7 +322,9 @@ public class Awex {
             AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
             task.markQueue(taskQueue);
             taskQueue.insert(task);
-            mTasks.put(task, task);
+            synchronized (mTasks) {
+                mTasks.add(task);
+            }
         }
 
         @SuppressWarnings("unchecked")

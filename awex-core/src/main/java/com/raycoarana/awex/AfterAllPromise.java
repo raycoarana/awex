@@ -63,6 +63,9 @@ class AfterAllPromise<Result, Progress> extends AwexPromise<MultipleResult<Resul
             });
             i++;
         }
+        if (i == 0) {
+            resolve(buildResult());
+        }
     }
 
     private MultipleResult<Result, Progress> buildResult() {

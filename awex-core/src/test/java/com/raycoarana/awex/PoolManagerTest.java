@@ -183,14 +183,14 @@ public class PoolManagerTest {
 
             @Override
             public void onTaskAdded(PoolState poolState, Task task) {
-                assertEquals(1, poolState.getQueue(FIRST_QUEUE).workers.size());
+                assertEquals(1, poolState.getQueue(FIRST_QUEUE).numberOfWorkers());
                 secondWorkerId = createWorker(FIRST_QUEUE);
                 queueTask(FIRST_QUEUE, task);
             }
 
             @Override
             public void onTaskFinished(PoolState poolState, Task task) {
-                assertEquals(2, poolState.getQueue(FIRST_QUEUE).workers.size());
+                assertEquals(2, poolState.getQueue(FIRST_QUEUE).numberOfWorkers());
                 removeWorker(FIRST_QUEUE, secondWorkerId);
             }
 

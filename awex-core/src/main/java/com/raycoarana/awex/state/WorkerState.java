@@ -4,44 +4,16 @@ import com.raycoarana.awex.Task;
 
 import java.util.concurrent.locks.LockSupport;
 
-public class WorkerState {
+public interface WorkerState {
+    int getId();
 
-    public final int id;
-    public final State state;
-    public final Task currentTask;
-    public final long lastTimeActive;
+    State getState();
 
-    public WorkerState(int id, State state, Task currentTask, long lastTimeActive) {
-        this.id = id;
-        this.state = state;
-        this.currentTask = currentTask;
-        this.lastTimeActive = lastTimeActive;
-    }
+    Task getCurrentTask();
 
-    public void toString(StringBuilder stringBuilder) {
-        stringBuilder.append("{/*Worker*/ id: ")
-                .append(id)
-                .append(", state: ")
-                .append(state)
-                .append(", lastTimeActive: ")
-                .append(lastTimeActive)
-                .append(", currentTask: ");
-        if (currentTask != null) {
-            currentTask.toString(stringBuilder);
-        } else {
-            stringBuilder.append("null");
-        }
-        stringBuilder.append(" }");
-    }
+    long getLastTimeActive();
 
-    @Override
-    public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        toString(stringBuilder);
-        return stringBuilder.toString();
-    }
-
-    public enum State {
+    enum State {
         /**
          * State for a worker which has not yet started.
          */
@@ -111,5 +83,4 @@ public class WorkerState {
          */
         WAITING_FOR_NEXT_TASK
     }
-
 }

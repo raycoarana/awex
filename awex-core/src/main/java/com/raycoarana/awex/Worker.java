@@ -1,7 +1,7 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.state.WorkerState;
 import com.raycoarana.awex.state.WorkerState.State;
+import com.raycoarana.awex.state.WorkerStateImpl;
 
 class Worker implements Runnable {
 
@@ -68,8 +68,8 @@ class Worker implements Runnable {
         }
     }
 
-    public synchronized WorkerState takeState() {
-        return new WorkerState(mId, getState(), mCurrentTask, mLastTimeActive);
+    public synchronized WorkerStateImpl takeState() {
+        return WorkerStateImpl.get(mId, getState(), mCurrentTask, mLastTimeActive);
     }
 
     private State getState() {

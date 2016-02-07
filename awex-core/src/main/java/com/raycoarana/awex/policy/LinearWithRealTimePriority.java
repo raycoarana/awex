@@ -30,10 +30,10 @@ public class LinearWithRealTimePriority extends PoolPolicy {
         QueueState queueState = poolState.getQueue(QUEUE_ID);
 
         boolean isRealTimeTask = task.getPriority() == Task.PRIORITY_REAL_TIME;
-        if (isRealTimeTask && (queueState.enqueue != 0 || queueState.waiters == 0)) {
+        if (isRealTimeTask && (queueState.getEnqueue() != 0 || queueState.getWaiters() == 0)) {
             executeImmediately(task);
         } else {
-            if (queueState.waiters == 0 && queueState.workers.size() < mMaxThreads) {
+            if (queueState.getWaiters() == 0 && queueState.numberOfWorkers() < mMaxThreads) {
                 createWorker(QUEUE_ID);
             }
             queueTask(QUEUE_ID, task);
