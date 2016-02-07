@@ -4,10 +4,10 @@ import com.raycoarana.awex.policy.LinearWithRealTimePriority;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,7 +62,7 @@ public class AwexPerf extends BasePerf {
             tasks.add(mAwex.submit(new Task<Integer, Void>() {
                 @Override
                 protected Integer run() throws InterruptedException {
-                    return 1;
+                    return doSomething();
                 }
             }));
         }
@@ -76,13 +76,25 @@ public class AwexPerf extends BasePerf {
             tasks.add(mThreadPool.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-                    return 1;
+                    return doSomething();
                 }
             }));
         }
-        for(Future<Integer> future : tasks) {
+        for (Future<Integer> future : tasks) {
             future.get();
         }
+    }
+
+    private int doSomething() {
+        /*
+        Random r = new Random();
+        double value = 0;
+        for (int i = 0; i < 100; i++) {
+            value += (Math.atan(Math.sinh(r.nextDouble()) * Math.sqrt(r.nextDouble()))) % 1000;
+        }
+        return (int) value;
+        */
+        return 1;
     }
 
 }

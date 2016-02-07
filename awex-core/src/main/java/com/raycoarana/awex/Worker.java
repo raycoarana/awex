@@ -32,7 +32,9 @@ class Worker implements Runnable {
 
     @Override
     public void run() {
-        mLogger.v("Worker " + mId + " starting...");
+        if (mLogger.isEnabled()) {
+            mLogger.v("Worker " + mId + " starting...");
+        }
         try {
             while (!mDie) {
                 try {
@@ -44,9 +46,13 @@ class Worker implements Runnable {
                     }
                     if (mCurrentTask != null) {
                         long taskId = mCurrentTask.getId();
-                        mLogger.v("Worker " + mId + " start executing task " + taskId);
+                        if (mLogger.isEnabled()) {
+                            mLogger.v("Worker " + mId + " start executing task " + taskId);
+                        }
                         mCurrentTask.execute();
-                        mLogger.v("Worker " + mId + " ends executing task " + taskId);
+                        if (mLogger.isEnabled()) {
+                            mLogger.v("Worker " + mId + " ends executing task " + taskId);
+                        }
                     }
                 } catch (InterruptedException ex) {
                     return;
@@ -62,9 +68,13 @@ class Worker implements Runnable {
                 }
             }
         } catch (IllegalStateException ex) {
-            mLogger.v("Worker aborted with illegal state exception: " + ex.getMessage());
+            if (mLogger.isEnabled()) {
+                mLogger.v("Worker aborted with illegal state exception: " + ex.getMessage());
+            }
         } finally {
-            mLogger.v("Worker " + mId + " dies");
+            if (mLogger.isEnabled()) {
+                mLogger.v("Worker " + mId + " dies");
+            }
         }
     }
 

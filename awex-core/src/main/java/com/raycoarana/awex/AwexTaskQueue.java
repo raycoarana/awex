@@ -9,6 +9,7 @@ class AwexTaskQueue {
 
     private final PriorityBlockingQueue<Task> mTaskQueue;
     private final AtomicInteger mWaitersCount = new AtomicInteger();
+    private final AtomicInteger mSize = new AtomicInteger();
     private final int mId;
     private boolean mDie = false;
 
@@ -25,6 +26,7 @@ class AwexTaskQueue {
 
             mWaitersCount.incrementAndGet();
             Task task = mTaskQueue.take();
+            mSize.decrementAndGet();
             task.setWorker(worker);
             return task;
         } finally {
@@ -38,6 +40,7 @@ class AwexTaskQueue {
         }
 
         mTaskQueue.offer(task);
+        mSize.incrementAndGet();
     }
 
     public synchronized <Result, Progress> boolean remove(Task<Result, Progress> task) {
@@ -45,7 +48,11 @@ class AwexTaskQueue {
             throw new IllegalStateException("Queue is die!");
         }
 
-        return mTaskQueue.remove(task);
+        boolean removed = mTaskQueue.remove(task);
+        if (removed) {
+            mSize.decrementAndGet();
+        }
+        return removed;
     }
 
     public int waiters() {
@@ -53,7 +60,7 @@ class AwexTaskQueue {
     }
 
     public int size() {
-        return mTaskQueue.size();
+        return mSize.get();
     }
 
     public int getId() {

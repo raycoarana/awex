@@ -5,14 +5,18 @@ import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class AfterAllPromise<Result, Progress> extends AwexPromise<MultipleResult<Result, Progress>, Progress> {
 
     private final Promise<Result, Progress>[] mPromises;
     private final Result[] mResults;
     private final Exception[] mErrors;
-
-    private int mResolvedPromises = 0;
+    private final ReentrantReadWriteLock mCancelLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock mCancelReadLock = mCancelLock.readLock();
+    private final ReentrantReadWriteLock.WriteLock mCancelWriteLock = mCancelLock.writeLock();
+    private AtomicInteger mResolvedPromises = new AtomicInteger(0);
 
     @SuppressWarnings("unchecked")
     public AfterAllPromise(Awex awex, Collection<Promise<Result, Progress>> promises) {
@@ -28,39 +32,36 @@ class AfterAllPromise<Result, Progress> extends AwexPromise<MultipleResult<Resul
             promise.done(new DoneCallback<Result>() {
                 @Override
                 public void onDone(Result result) {
-                    synchronized (AfterAllPromise.this) {
+                    try {
+                        mCancelReadLock.lock();
                         if (getState() == STATE_PENDING) {
                             mResults[promiseIndex] = result;
-                            mResolvedPromises++;
-                            if (mResolvedPromises == mPromises.length) {
+                            int resolvedPromises = mResolvedPromises.incrementAndGet();
+                            if (resolvedPromises == mPromises.length) {
                                 resolve(buildResult());
                             }
                         }
+                    } finally {
+                        mCancelReadLock.unlock();
                     }
                 }
             }).fail(new FailCallback() {
                 @Override
                 public void onFail(Exception exception) {
-                    synchronized (AfterAllPromise.this) {
+                    try {
+                        mCancelReadLock.lock();
                         if (getState() == STATE_PENDING) {
                             mErrors[promiseIndex] = exception;
-                            mResolvedPromises++;
-                            if (mResolvedPromises == mPromises.length) {
+                            int resolvedPromises = mResolvedPromises.incrementAndGet();
+                            if (resolvedPromises == mPromises.length) {
                                 resolve(buildResult());
                             }
                         }
+                    } finally {
+                        mCancelReadLock.unlock();
                     }
                 }
-            }).cancel(new CancelCallback() {
-                @Override
-                public void onCancel() {
-                    synchronized (AfterAllPromise.this) {
-                        if (getState() == STATE_PENDING) {
-                            cancelTask(false);
-                        }
-                    }
-                }
-            });
+            }).cancel(mCancelCallback);
             i++;
         }
         if (i == 0) {
@@ -68,18 +69,35 @@ class AfterAllPromise<Result, Progress> extends AwexPromise<MultipleResult<Resul
         }
     }
 
+    private final CancelCallback mCancelCallback = new CancelCallback() {
+        @Override
+        public void onCancel() {
+            try {
+                mCancelWriteLock.lock();
+                if (getState() == STATE_PENDING) {
+                    cancelTask(false);
+                }
+            } finally {
+                mCancelWriteLock.unlock();
+            }
+        }
+    };
+
     private MultipleResult<Result, Progress> buildResult() {
         return new MultipleResult<>(mPromises, mResults, mErrors);
     }
 
     @Override
     public void cancelTask(boolean mayInterrupt) {
-        synchronized (this) {
+        try {
+            mCancelWriteLock.lock();
             super.cancelTask(mayInterrupt);
 
             for (Promise<Result, Progress> promise : mPromises) {
                 promise.cancelTask(mayInterrupt);
             }
+        } finally {
+            mCancelWriteLock.unlock();
         }
     }
 

@@ -203,7 +203,9 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         synchronized (this) {
             validateInPendingState();
 
-            mLogger.v("Promise of task " + mId + " progress to " + progress);
+            if (mLogger.isEnabled()) {
+                mLogger.v("Promise of task " + mId + " progress to " + progress);
+            }
 
             if (mProgressCallbacks.size() > 0) {
                 triggerAllProgress(progress);

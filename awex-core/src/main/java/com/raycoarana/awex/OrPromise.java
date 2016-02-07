@@ -16,8 +16,6 @@ class OrPromise<T, P> extends AwexPromise<T, P> {
         mMainPromise = mainPromise;
         mSecondChoicePromise = secondChoicePromise;
 
-        final CancelCallback cancelCallback = buildCancelCallback();
-
         mainPromise.done(mDoneCallback)
                 .fail(new FailCallback() {
                     @Override
@@ -33,23 +31,10 @@ class OrPromise<T, P> extends AwexPromise<T, P> {
                                         }
                                     }
                                 })
-                                .cancel(cancelCallback);
+                                .cancel(mCancellCallback);
                     }
                 })
-                .cancel(cancelCallback);
-    }
-
-    private CancelCallback buildCancelCallback() {
-        return new CancelCallback() {
-            @Override
-            public void onCancel() {
-                synchronized (OrPromise.this) {
-                    if (getState() == STATE_PENDING) {
-                        cancelTask(false);
-                    }
-                }
-            }
-        };
+                .cancel(mCancellCallback);
     }
 
     @Override
@@ -67,6 +52,17 @@ class OrPromise<T, P> extends AwexPromise<T, P> {
             synchronized (OrPromise.this) {
                 if (getState() == STATE_PENDING) {
                     resolve(result);
+                }
+            }
+        }
+    };
+
+    private final CancelCallback mCancellCallback = new CancelCallback() {
+        @Override
+        public void onCancel() {
+            synchronized (OrPromise.this) {
+                if (getState() == STATE_PENDING) {
+                    cancelTask(false);
                 }
             }
         }
