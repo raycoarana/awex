@@ -51,8 +51,8 @@ public class AwexPerf extends BasePerf {
     @Before
     public void setUp() {
         super.setUp();
-        mAwex = new Awex(mUIThread, mLogger, new LinearWithRealTimePriority(1));
-        mThreadPool = Executors.newFixedThreadPool(1);
+        mAwex = new Awex(mUIThread, mLogger, new LinearWithRealTimePriority(4));
+        mThreadPool = Executors.newFixedThreadPool(4);
     }
 
     @Test

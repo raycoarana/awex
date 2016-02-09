@@ -7,12 +7,10 @@ import com.raycoarana.awex.callbacks.ProgressCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
 import com.raycoarana.awex.state.PoolStateImpl;
 import com.raycoarana.awex.state.QueueStateImpl;
+import com.raycoarana.awex.util.Map;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -25,13 +23,13 @@ public class Awex {
     private final UIThread mUIThread;
     private final Logger mLogger;
     private final AtomicLong mWorkIdProvider = new AtomicLong();
-    private final HashMap<Integer, AwexTaskQueue> mTaskQueueMap;
-    private final HashMap<Integer, HashMap<Integer, Worker>> mWorkers;
+    private final Map<Integer, AwexTaskQueue> mTaskQueueMap;
+    private final Map<Integer, Map<Integer, Worker>> mWorkers;
     private final PoolPolicy mPoolPolicy;
     private final AtomicInteger mThreadIdProvider = new AtomicInteger();
     private final ExecutorService mCallbackExecutor = Executors.newSingleThreadExecutor();
     private final Timer mTimer;
-    private final Map<Task, Task> mTasks = Collections.synchronizedMap(new HashMap<Task, Task>());
+    private final Map<Task, Task> mTasks = Map.Provider.getSync();
 
     private AwexPromise mAbsentPromise;
 
@@ -42,8 +40,8 @@ public class Awex {
     public Awex(UIThread uiThread, Logger logger, PoolPolicy poolPolicy) {
         mUIThread = uiThread;
         mLogger = logger;
-        mTaskQueueMap = new HashMap<>();
-        mWorkers = new HashMap<>();
+        mTaskQueueMap = Map.Provider.getSync();
+        mWorkers = Map.Provider.getSync();
         mPoolPolicy = poolPolicy;
         mTimer = new Timer();
 
@@ -86,7 +84,7 @@ public class Awex {
 
     @SuppressWarnings("unchecked")
     private void extractQueueState(PoolStateImpl poolState) {
-        HashMap<Integer, AwexTaskQueue> queues = (HashMap<Integer, AwexTaskQueue>) mTaskQueueMap.clone();
+        Map<Integer, AwexTaskQueue> queues = mTaskQueueMap.clone();
         for (AwexTaskQueue queue : queues.values()) {
             QueueStateImpl queueState = QueueStateImpl.get(queue.getId(),
                     queue.size(),
@@ -98,7 +96,7 @@ public class Awex {
 
     @SuppressWarnings("unchecked")
     private void extractWorkersInfo(QueueStateImpl queueState) {
-        HashMap<Integer, Worker> workers = (HashMap<Integer, Worker>) mWorkers.get(queueState.getId()).clone();
+        Map<Integer, Worker> workers = mWorkers.get(queueState.getId()).clone();
         for (Worker worker : workers.values()) {
             queueState.addWorker(worker.getId(), worker.takeState());
         }
@@ -356,9 +354,9 @@ public class Awex {
         @Override
         public synchronized int createWorker(int queueId) {
             AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
-            HashMap<Integer, Worker> workersOfQueue = mWorkers.get(queueId);
+            Map<Integer, Worker> workersOfQueue = mWorkers.get(queueId);
             if (workersOfQueue == null) {
-                workersOfQueue = new HashMap<>();
+                workersOfQueue = Map.Provider.get();
                 mWorkers.put(queueId, workersOfQueue);
             }
 

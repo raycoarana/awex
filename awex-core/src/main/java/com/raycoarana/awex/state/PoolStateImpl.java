@@ -1,22 +1,20 @@
 package com.raycoarana.awex.state;
 
 import com.raycoarana.awex.Task;
+import com.raycoarana.awex.util.Map;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.Set;
 
 public class PoolStateImpl implements PoolState {
 
-    private final Map<Integer, QueueStateImpl> mQueueStateMap = new HashMap<>();
+    private final Map<Integer, QueueStateImpl> mQueueStateMap = Map.Provider.get();
     private Map<Task, Task> mTasks;
 
     private PoolStateImpl() {
     }
 
-    private final static Queue<PoolStateImpl> sObjectPool = new LinkedList<>();
+    private final static Queue<PoolStateImpl> sObjectPool = new ArrayDeque<>(4);
 
     public static PoolStateImpl get() {
         PoolStateImpl poolState;

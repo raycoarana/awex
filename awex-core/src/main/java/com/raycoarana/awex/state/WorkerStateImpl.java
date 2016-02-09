@@ -2,6 +2,7 @@ package com.raycoarana.awex.state;
 
 import com.raycoarana.awex.Task;
 
+import java.util.ArrayDeque;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -12,7 +13,7 @@ public class WorkerStateImpl implements WorkerState {
     private Task mCurrentTask;
     private long mLastTimeActive;
 
-    private final static Queue<WorkerStateImpl> sObjectPool = new LinkedList<>();
+    private final static Queue<WorkerStateImpl> sObjectPool = new ArrayDeque<>(4);
 
     public static WorkerStateImpl get(int id, State state, Task currentTask, long lastTimeActive) {
         WorkerStateImpl workerState;

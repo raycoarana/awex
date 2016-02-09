@@ -1,8 +1,8 @@
 package com.raycoarana.awex.state;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import com.raycoarana.awex.util.Map;
+
+import java.util.ArrayDeque;
 import java.util.Queue;
 
 public class QueueStateImpl implements QueueState {
@@ -10,9 +10,9 @@ public class QueueStateImpl implements QueueState {
     private int mId;
     private int mEnqueue;
     private int mWaiters;
-    private final Map<Integer, WorkerStateImpl> mWorkers = new HashMap<>();
+    private final Map<Integer, WorkerStateImpl> mWorkers = Map.Provider.get();
 
-    private final static Queue<QueueStateImpl> sObjectPool = new LinkedList<>();
+    private final static Queue<QueueStateImpl> sObjectPool = new ArrayDeque<>(4);
 
     public static QueueStateImpl get(int id, int enqueue, int waiters) {
         QueueStateImpl queueState;
