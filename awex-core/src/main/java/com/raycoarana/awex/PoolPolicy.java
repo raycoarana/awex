@@ -24,7 +24,7 @@ public abstract class PoolPolicy {
     }
 
     /**
-     * Revmoes the queue from the pool, any worker associated with that queue will be interrupted
+     * Removes the queue from the pool, any worker associated with that queue will be interrupted
      *
      * @param queueId id of the queue
      */

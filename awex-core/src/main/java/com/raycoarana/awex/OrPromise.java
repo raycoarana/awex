@@ -23,10 +23,10 @@ class OrPromise<T, P> extends AwexPromise<T, P> {
                         mSecondChoicePromise.done(mDoneCallback)
                                 .fail(new FailCallback() {
                                     @Override
-                                    public void onFail(Exception secondChoiseException) {
+                                    public void onFail(Exception secondChoiceException) {
                                         synchronized (OrPromise.this) {
                                             if (getState() == STATE_PENDING) {
-                                                reject(new OrException(mainException, secondChoiseException));
+                                                reject(new OrException(mainException, secondChoiceException));
                                             }
                                         }
                                     }

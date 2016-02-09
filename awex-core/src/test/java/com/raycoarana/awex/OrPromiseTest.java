@@ -64,7 +64,7 @@ public class OrPromiseTest extends BasePromiseTest {
             throw new IllegalStateException("Invalid promise state");
         } catch (OrException ex) {
             assertEquals("Main", ex.getMainPromiseException().getMessage());
-            assertEquals("SecondChoice", ex.getSecondChoisePromiseException().getMessage());
+            assertEquals("SecondChoice", ex.getSecondChoicePromiseException().getMessage());
         }
     }
 

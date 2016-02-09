@@ -3,20 +3,20 @@ package com.raycoarana.awex.exceptions;
 public class OrException extends Exception {
 
     private final Exception mMainException;
-    private final Exception mSecondChoiseException;
+    private final Exception mSecondChoiceException;
 
-    public OrException(Exception mainException, Exception secondChoiseException) {
+    public OrException(Exception mainException, Exception secondChoiceException) {
         super("Both promises of OR operation rejected");
         mMainException = mainException;
-        mSecondChoiseException = secondChoiseException;
+        mSecondChoiceException = secondChoiceException;
     }
 
     public Exception getMainPromiseException() {
         return mMainException;
     }
 
-    public Exception getSecondChoisePromiseException() {
-        return mSecondChoiseException;
+    public Exception getSecondChoicePromiseException() {
+        return mSecondChoiceException;
     }
 
 }

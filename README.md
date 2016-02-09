@@ -94,7 +94,7 @@ awex.submit(someTask)
     });
 ```
 
-But if you are in Android, many times you want that some of that callbacks gets executed in the main thread to update the UI. For that purpose, Awex provide the same interfaces prefixed by _UI_. Everytime an _UI_ callback is added, its code is executed in the main thread.
+But if you are in Android, many times you want that some of that callbacks gets executed in the main thread to update the UI. For that purpose, Awex provide the same interfaces prefixed by _UI_. Every time an _UI_ callback is added, its code is executed in the main thread.
 
 ```java
 awex.submit(someTask)

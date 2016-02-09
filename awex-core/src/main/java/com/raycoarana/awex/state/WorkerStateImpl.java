@@ -3,7 +3,6 @@ package com.raycoarana.awex.state;
 import com.raycoarana.awex.Task;
 
 import java.util.ArrayDeque;
-import java.util.LinkedList;
 import java.util.Queue;
 
 public class WorkerStateImpl implements WorkerState {
