@@ -103,44 +103,6 @@ public class ArrayMap<K, V> implements Map<K, V> {
         return ~end;
     }
 
-    int indexOfNull() {
-        final int N = mSize;
-
-        // Important fast case: if nothing is in here, nothing to look for.
-        if (N == 0) {
-            return ~0;
-        }
-
-        int index = binarySearch(mHashes, N, 0);
-
-        // If the hash code wasn't found, then we have no entry for this key.
-        if (index < 0) {
-            return index;
-        }
-
-        // If the key at the returned index matches, that's what we want.
-        if (null == mArray[index << 1]) {
-            return index;
-        }
-
-        // Search for a matching key after the index.
-        int end;
-        for (end = index + 1; end < N && mHashes[end] == 0; end++) {
-            if (null == mArray[end << 1]) return end;
-        }
-
-        // Search for a matching key before the index.
-        for (int i = index - 1; i >= 0 && mHashes[i] == 0; i--) {
-            if (null == mArray[i << 1]) return i;
-        }
-
-        // Key not found -- return negative value indicating where a
-        // new entry for this key should go.  We use the end of the
-        // hash chain to reduce the number of array entries that will
-        // need to be copied when inserting.
-        return ~end;
-    }
-
     // This is Arrays.binarySearch(), but doesn't do any argument validation.
     private int binarySearch(int[] array, int size, int value) {
         int lo = 0;
@@ -299,7 +261,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * @return Returns the index of the key if it exists, else a negative integer.
      */
     public int indexOfKey(Object key) {
-        return key == null ? indexOfNull() : indexOf(key, key.hashCode());
+        return indexOf(key, key.hashCode());
     }
 
     int indexOfValue(Object value) {
@@ -395,15 +357,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * was no such key.
      */
     public V put(K key, V value) {
-        final int hash;
-        int index;
-        if (key == null) {
-            hash = 0;
-            index = indexOfNull();
-        } else {
-            hash = key.hashCode();
-            index = indexOf(key, hash);
-        }
+        final int hash = key.hashCode();
+        int index = indexOf(key, hash);
         if (index >= 0) {
             index = (index << 1) + 1;
             final V old = (V) mArray[index];
@@ -463,10 +418,10 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
         @Override
         public T next() {
-            Object res = mArray[(mIndex<<1) + mOffset];
+            Object res = mArray[(mIndex << 1) + mOffset];
             mIndex++;
             mCanRemove = true;
-            return (T)res;
+            return (T) res;
         }
 
         @Override

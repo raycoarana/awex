@@ -1,9 +1,7 @@
 package com.raycoarana.awex.state;
 
 import com.raycoarana.awex.util.Map;
-
-import java.util.ArrayDeque;
-import java.util.Queue;
+import com.raycoarana.awex.util.ObjectPool;
 
 public class QueueStateImpl implements QueueState {
 
@@ -12,14 +10,13 @@ public class QueueStateImpl implements QueueState {
     private int mWaiters;
     private final Map<Integer, WorkerStateImpl> mWorkers = Map.Provider.get();
 
-    private final static Queue<QueueStateImpl> sObjectPool = new ArrayDeque<>(4);
+    private final static ObjectPool<QueueStateImpl> sObjectPool = new ObjectPool<>(30);
 
     public static QueueStateImpl get(int id, int enqueue, int waiters) {
         QueueStateImpl queueState;
         synchronized (sObjectPool) {
-            if (sObjectPool.size() > 0) {
-                queueState = sObjectPool.poll();
-            } else {
+            queueState = sObjectPool.acquire();
+            if (queueState == null) {
                 queueState = new QueueStateImpl();
             }
             queueState.mId = id;
@@ -71,7 +68,7 @@ public class QueueStateImpl implements QueueState {
         }
         mWorkers.clear();
         synchronized (sObjectPool) {
-            sObjectPool.add(this);
+            sObjectPool.release(this);
         }
     }
 

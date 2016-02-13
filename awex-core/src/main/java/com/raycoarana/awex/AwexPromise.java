@@ -12,10 +12,12 @@ import com.raycoarana.awex.callbacks.UIFailCallback;
 import com.raycoarana.awex.callbacks.UIProgressCallback;
 import com.raycoarana.awex.transform.Filter;
 import com.raycoarana.awex.transform.Mapper;
+import com.raycoarana.awex.util.ObjectPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,12 +35,86 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
     private int mState;
     private Result mResult;
     private Exception mException;
+    private Callbacks<Result, Progress> mCallbacks;
 
-    private final List<DoneCallback<Result>> mDoneCallbacks = new ArrayList<>();
-    private final List<FailCallback> mFailCallbacks = new ArrayList<>();
-    private final List<ProgressCallback<Progress>> mProgressCallbacks = new ArrayList<>();
-    private final List<CancelCallback> mCancelCallbacks = new ArrayList<>();
-    private final List<AlwaysCallback> mAlwaysCallbacks = new ArrayList<>();
+    private final Object mProgressInOrderSyncObject = new Object();
+    private final Object mBlockingObject = new Object();
+
+    private static class Callbacks<Result, Progress> {
+        public static final Callbacks EMPTY = new Callbacks(true);
+
+        private final List<DoneCallback<Result>> mDoneCallbacks;
+        private final List<FailCallback> mFailCallbacks;
+        private final List<ProgressCallback<Progress>> mProgressCallbacks;
+        private final List<CancelCallback> mCancelCallbacks;
+        private final List<AlwaysCallback> mAlwaysCallbacks;
+
+        private static final ObjectPool<Callbacks> sObjectPool = new ObjectPool<>(30);
+
+        @SuppressWarnings("unchecked")
+        public static <R, P> Callbacks<R, P> get() {
+            Callbacks<R, P> callbacks = (Callbacks<R, P>) sObjectPool.acquire();
+            if (callbacks == null) {
+                callbacks = new Callbacks<>(false);
+            }
+            return callbacks;
+        }
+
+        private Callbacks(boolean empty) {
+            if (empty) {
+                mDoneCallbacks = Collections.emptyList();
+                mFailCallbacks = Collections.emptyList();
+                mProgressCallbacks = Collections.emptyList();
+                mCancelCallbacks = Collections.emptyList();
+                mAlwaysCallbacks = Collections.emptyList();
+            } else {
+                mDoneCallbacks = new ArrayList<>();
+                mFailCallbacks = new ArrayList<>();
+                mProgressCallbacks = new ArrayList<>();
+                mCancelCallbacks = new ArrayList<>();
+                mAlwaysCallbacks = new ArrayList<>();
+            }
+        }
+
+        public List<DoneCallback<Result>> cloneDoneCallbacks() {
+            return clone(mDoneCallbacks);
+        }
+
+        public List<FailCallback> cloneFailCallbacks() {
+            return clone(mFailCallbacks);
+        }
+
+        public List<ProgressCallback<Progress>> cloneProgressCallbacks() {
+            return clone(mProgressCallbacks);
+        }
+
+        public List<AlwaysCallback> cloneAlwaysCallbacks() {
+            return clone(mAlwaysCallbacks);
+        }
+
+        public List<CancelCallback> cloneCancelCallbacks() {
+            return clone(mCancelCallbacks);
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> List<T> clone(List<T> items) {
+            return items.size() == 0 ? Collections.<T>emptyList() : (List<T>) ((ArrayList) items).clone();
+        }
+
+        public void recycle() {
+            if (this.equals(EMPTY)) {
+                return;
+            }
+
+            mDoneCallbacks.clear();
+            mFailCallbacks.clear();
+            mProgressCallbacks.clear();
+            mCancelCallbacks.clear();
+            mAlwaysCallbacks.clear();
+
+            sObjectPool.release(this);
+        }
+    }
 
     public AwexPromise(Awex awex) {
         this(awex, null);
@@ -51,6 +127,7 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         mUIThread = awex.provideUIThread();
         mLogger = awex.provideLogger();
         mState = STATE_PENDING;
+        mCallbacks = Callbacks.get();
         printStateChanged("PENDING");
     }
 
@@ -60,31 +137,34 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
      * @param result value used to resolve the promise
      * @throws IllegalStateException if the promise is not in pending state
      */
+    @SuppressWarnings("unchecked")
     public Promise<Result, Progress> resolve(Result result) {
+        List<DoneCallback<Result>> doneCallbacks;
+        List<AlwaysCallback> alwaysCallbacks;
         synchronized (this) {
             validateInPendingState();
 
             mState = STATE_RESOLVED;
             printStateChanged("RESOLVED");
             mResult = result;
-            if (mDoneCallbacks.size() > 0 || mAlwaysCallbacks.size() > 0) {
-                triggerAllDones();
-                triggerAllAlways();
-                clearCallbacks();
-            } else {
-                clearCallbacks();
-            }
+
+            doneCallbacks = mCallbacks.cloneDoneCallbacks();
+            alwaysCallbacks = mCallbacks.cloneAlwaysCallbacks();
+            clearCallbacks();
+        }
+
+        if (doneCallbacks.size() > 0 || alwaysCallbacks.size() > 0) {
+            triggerAllDones(doneCallbacks);
+            triggerAllAlways(alwaysCallbacks);
         }
 
         return this;
     }
 
 
-    private void triggerAllDones() {
-        synchronized (this) {
-            for (final DoneCallback<Result> callback : mDoneCallbacks) {
-                triggerDone(callback);
-            }
+    private void triggerAllDones(Collection<DoneCallback<Result>> doneCallbacks) {
+        for (final DoneCallback<Result> callback : doneCallbacks) {
+            triggerDone(callback);
         }
     }
 
@@ -114,7 +194,10 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
      *
      * @param ex exception that represents the rejection of the promise
      */
+    @SuppressWarnings("unchecked")
     public Promise<Result, Progress> reject(Exception ex) {
+        List<FailCallback> failCallbacks;
+        List<AlwaysCallback> alwaysCallbacks;
         synchronized (this) {
             if (mState == STATE_CANCELLED) {
                 return this;
@@ -124,23 +207,23 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
             mState = STATE_REJECTED;
             printStateChanged("REJECTED");
             mException = ex;
-            if (mFailCallbacks.size() > 0 || mAlwaysCallbacks.size() > 0) {
-                triggerAllFails();
-                triggerAllAlways();
-                clearCallbacks();
-            } else {
-                clearCallbacks();
-            }
+
+            failCallbacks = mCallbacks.cloneFailCallbacks();
+            alwaysCallbacks = mCallbacks.cloneAlwaysCallbacks();
+            clearCallbacks();
+        }
+
+        if (failCallbacks.size() > 0 || alwaysCallbacks.size() > 0) {
+            triggerAllFails(failCallbacks);
+            triggerAllAlways(alwaysCallbacks);
         }
 
         return this;
     }
 
-    private void triggerAllFails() {
-        synchronized (this) {
-            for (final FailCallback callback : mFailCallbacks) {
-                triggerFail(callback);
-            }
+    private void triggerAllFails(Collection<FailCallback> failCallbacks) {
+        for (final FailCallback callback : failCallbacks) {
+            triggerFail(callback);
         }
     }
 
@@ -165,11 +248,9 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         }
     }
 
-    private void triggerAllAlways() {
-        synchronized (this) {
-            for (final AlwaysCallback callback : mAlwaysCallbacks) {
-                triggerAlways(callback);
-            }
+    private void triggerAllAlways(List<AlwaysCallback> alwaysCallbacks) {
+        for (final AlwaysCallback callback : alwaysCallbacks) {
+            triggerAlways(callback);
         }
     }
 
@@ -199,7 +280,9 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
      *
      * @param progress amount of progress
      */
+    @SuppressWarnings("unchecked")
     public void notifyProgress(Progress progress) {
+        List<ProgressCallback<Progress>> progressCallbacks;
         synchronized (this) {
             validateInPendingState();
 
@@ -207,14 +290,17 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
                 mLogger.v("Promise of task " + mId + " progress to " + progress);
             }
 
-            if (mProgressCallbacks.size() > 0) {
-                triggerAllProgress(progress);
+            progressCallbacks = mCallbacks.cloneProgressCallbacks();
+        }
+        synchronized (mProgressInOrderSyncObject) {
+            if (progressCallbacks.size() > 0) {
+                triggerAllProgress(progress, progressCallbacks);
             }
         }
     }
 
-    private void triggerAllProgress(Progress progress) {
-        for (final ProgressCallback<Progress> callback : mProgressCallbacks) {
+    private void triggerAllProgress(Progress progress, Collection<ProgressCallback<Progress>> progressCallbacks) {
+        for (final ProgressCallback<Progress> callback : progressCallbacks) {
             triggerProgress(callback, progress);
         }
     }
@@ -251,40 +337,45 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         cancelTask(false);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void cancelTask(final boolean mayInterrupt) {
+        final int state;
+        final List<CancelCallback> cancelCallbacks;
         synchronized (this) {
-            if (mState == STATE_PENDING) {
+            state = mState;
+            if (state == STATE_PENDING) {
                 mState = STATE_CANCELLED;
                 printStateChanged("CANCELLED");
-                if (mUIThread.isCurrentThread() && mCancelCallbacks.size() > 0) {
-                    mAwex.submit(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            doCancel(mayInterrupt);
-                        }
-
-                    });
-                } else {
-                    doCancel(mayInterrupt);
-                }
             }
-        }
-    }
-
-    private void doCancel(boolean mayInterrupt) {
-        synchronized (this) {
-            if (mTask != null) {
-                mAwex.cancel(mTask, mayInterrupt);
-            }
-            triggerAllCancel();
+            cancelCallbacks = mCallbacks.cloneCancelCallbacks();
             clearCallbacks();
         }
+        if (state == STATE_PENDING) {
+            if (mUIThread.isCurrentThread() && cancelCallbacks.size() > 0) {
+                mAwex.submit(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        doCancel(mayInterrupt, cancelCallbacks);
+                    }
+
+                });
+            } else {
+                doCancel(mayInterrupt, cancelCallbacks);
+            }
+        }
     }
 
-    private void triggerAllCancel() {
-        for (final CancelCallback callback : mCancelCallbacks) {
+    private void doCancel(boolean mayInterrupt, Collection<CancelCallback> cancelCallbacks) {
+        if (mTask != null) {
+            mAwex.cancel(mTask, mayInterrupt);
+        }
+        triggerAllCancel(cancelCallbacks);
+    }
+
+    private void triggerAllCancel(Collection<CancelCallback> cancelCallbacks) {
+        for (final CancelCallback callback : cancelCallbacks) {
             triggerCancel(callback);
         }
     }
@@ -310,14 +401,14 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void clearCallbacks() {
-        mDoneCallbacks.clear();
-        mFailCallbacks.clear();
-        mProgressCallbacks.clear();
-        mCancelCallbacks.clear();
-        mAlwaysCallbacks.clear();
+        mCallbacks.recycle();
+        mCallbacks = Callbacks.EMPTY;
 
-        notifyAll();
+        synchronized (mBlockingObject) {
+            mBlockingObject.notifyAll();
+        }
     }
 
     @Override
@@ -353,40 +444,36 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     @Override
     public Result getResult() throws Exception {
-        synchronized (this) {
-            blockWhilePending();
+        blockWhilePending();
 
-            switch (mState) {
-                case STATE_CANCELLED:
-                    throw new IllegalStateException("Couldn't get result from a cancelled promise");
-                case STATE_REJECTED:
-                    throw mException;
-                default: //Promise.STATE_RESOLVED:
-                    return mResult;
-            }
+        switch (mState) {
+            case STATE_CANCELLED:
+                throw new IllegalStateException("Couldn't get result from a cancelled promise");
+            case STATE_REJECTED:
+                throw mException;
+            default: //Promise.STATE_RESOLVED:
+                return mResult;
         }
     }
 
     @Override
     public Result getResultOrDefault(Result defaultValue) throws InterruptedException {
-        synchronized (this) {
-            blockWhilePending();
+        blockWhilePending();
 
-            switch (mState) {
-                case STATE_CANCELLED:
-                case STATE_REJECTED:
-                    return defaultValue;
-                default: //Promise.STATE_RESOLVED:
-                    return mResult;
-            }
+        switch (mState) {
+            case STATE_CANCELLED:
+            case STATE_REJECTED:
+                return defaultValue;
+            default: //Promise.STATE_RESOLVED:
+                return mResult;
         }
     }
 
     private void blockWhilePending() throws InterruptedException {
-        synchronized (this) {
+        synchronized (mBlockingObject) {
             while (isPending()) {
                 try {
-                    wait();
+                    mBlockingObject.wait();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     throw ex;
@@ -397,25 +484,26 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     @Override
     public Promise<Result, Progress> done(final DoneCallback<Result> callback) {
+        int state;
         synchronized (this) {
-            switch (mState) {
-                case STATE_PENDING:
-                    mDoneCallbacks.add(callback);
-                    break;
-                case STATE_RESOLVED:
-                    if (shouldExecuteInBackground(callback)) {
-                        mAwex.submit(new Runnable() {
+            state = mState;
+            if (state == STATE_PENDING) {
+                mCallbacks.mDoneCallbacks.add(callback);
+            }
+        }
 
-                            @Override
-                            public void run() {
-                                tryTrigger(callback, mResult);
-                            }
+        if (state == STATE_RESOLVED) {
+            if (shouldExecuteInBackground(callback)) {
+                mAwex.submit(new Runnable() {
 
-                        });
-                    } else {
-                        triggerDone(callback);
+                    @Override
+                    public void run() {
+                        tryTrigger(callback, mResult);
                     }
-                    break;
+
+                });
+            } else {
+                triggerDone(callback);
             }
         }
         return this;
@@ -427,24 +515,25 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     @Override
     public Promise<Result, Progress> fail(final FailCallback callback) {
+        int state;
         synchronized (this) {
-            switch (mState) {
-                case STATE_PENDING:
-                    mFailCallbacks.add(callback);
-                    break;
-                case STATE_REJECTED:
-                    if (shouldExecuteInBackground(callback)) {
-                        mAwex.submit(new Runnable() {
+            state = mState;
+            if (state == STATE_PENDING) {
+                mCallbacks.mFailCallbacks.add(callback);
+            }
+        }
 
-                            @Override
-                            public void run() {
-                                tryTrigger(callback, mException);
-                            }
-                        });
-                    } else {
-                        triggerFail(callback);
+        if (state == STATE_REJECTED) {
+            if (shouldExecuteInBackground(callback)) {
+                mAwex.submit(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        tryTrigger(callback, mException);
                     }
-                    break;
+                });
+            } else {
+                triggerFail(callback);
             }
         }
         return this;
@@ -459,7 +548,7 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         synchronized (this) {
             switch (mState) {
                 case STATE_PENDING:
-                    mProgressCallbacks.add(callback);
+                    mCallbacks.mProgressCallbacks.add(callback);
                     break;
             }
         }
@@ -468,24 +557,24 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     @Override
     public Promise<Result, Progress> cancel(final CancelCallback callback) {
+        int state;
         synchronized (this) {
-            switch (mState) {
-                case STATE_PENDING:
-                    mCancelCallbacks.add(callback);
-                    break;
-                case STATE_CANCELLED:
-                    if (shouldExecuteInBackground(callback)) {
-                        mAwex.submit(new Runnable() {
+            state = mState;
+            if (mState == STATE_PENDING) {
+                mCallbacks.mCancelCallbacks.add(callback);
+            }
+        }
+        if (state == STATE_CANCELLED) {
+            if (shouldExecuteInBackground(callback)) {
+                mAwex.submit(new Runnable() {
 
-                            @Override
-                            public void run() {
-                                tryTrigger(callback);
-                            }
-                        });
-                    } else {
-                        triggerCancel(callback);
+                    @Override
+                    public void run() {
+                        tryTrigger(callback);
                     }
-                    break;
+                });
+            } else {
+                triggerCancel(callback);
             }
         }
         return this;
@@ -497,26 +586,28 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
 
     @Override
     public Promise<Result, Progress> always(final AlwaysCallback callback) {
+        int state;
         synchronized (this) {
-            switch (mState) {
-                case STATE_PENDING:
-                    mAlwaysCallbacks.add(callback);
-                    break;
-                case STATE_RESOLVED:
-                case STATE_REJECTED:
-                    if (shouldExecuteInBackground(callback)) {
-                        mAwex.submit(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                tryTrigger(callback);
-                            }
-                        });
-                    } else {
-                        triggerAlways(callback);
-                    }
-                    break;
+            state = mState;
+            if (state == STATE_PENDING) {
+                mCallbacks.mAlwaysCallbacks.add(callback);
             }
+        }
+        switch (state) {
+            case STATE_RESOLVED:
+            case STATE_REJECTED:
+                if (shouldExecuteInBackground(callback)) {
+                    mAwex.submit(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tryTrigger(callback);
+                        }
+                    });
+                } else {
+                    triggerAlways(callback);
+                }
+                break;
         }
         return this;
     }

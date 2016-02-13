@@ -2,9 +2,7 @@ package com.raycoarana.awex.state;
 
 import com.raycoarana.awex.Task;
 import com.raycoarana.awex.util.Map;
-
-import java.util.ArrayDeque;
-import java.util.Queue;
+import com.raycoarana.awex.util.ObjectPool;
 
 public class PoolStateImpl implements PoolState {
 
@@ -14,14 +12,13 @@ public class PoolStateImpl implements PoolState {
     private PoolStateImpl() {
     }
 
-    private final static Queue<PoolStateImpl> sObjectPool = new ArrayDeque<>(4);
+    private final static ObjectPool<PoolStateImpl> sObjectPool = new ObjectPool<>(30);
 
     public static PoolStateImpl get() {
         PoolStateImpl poolState;
         synchronized (sObjectPool) {
-            if (sObjectPool.size() > 0) {
-                poolState = sObjectPool.poll();
-            } else {
+            poolState = sObjectPool.acquire();
+            if (poolState == null) {
                 poolState = new PoolStateImpl();
             }
         }
@@ -47,7 +44,7 @@ public class PoolStateImpl implements PoolState {
                 queueState.recycle();
             }
             mQueueStateMap.clear();
-            sObjectPool.add(this);
+            sObjectPool.release(this);
         }
     }
 

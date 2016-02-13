@@ -1,9 +1,7 @@
 package com.raycoarana.awex.state;
 
 import com.raycoarana.awex.Task;
-
-import java.util.ArrayDeque;
-import java.util.Queue;
+import com.raycoarana.awex.util.ObjectPool;
 
 public class WorkerStateImpl implements WorkerState {
 
@@ -12,14 +10,13 @@ public class WorkerStateImpl implements WorkerState {
     private Task mCurrentTask;
     private long mLastTimeActive;
 
-    private final static Queue<WorkerStateImpl> sObjectPool = new ArrayDeque<>(4);
+    private final static ObjectPool<WorkerStateImpl> sObjectPool = new ObjectPool<>(30);
 
     public static WorkerStateImpl get(int id, State state, Task currentTask, long lastTimeActive) {
         WorkerStateImpl workerState;
         synchronized (sObjectPool) {
-            if (sObjectPool.size() > 0) {
-                workerState = sObjectPool.poll();
-            } else {
+            workerState = sObjectPool.acquire();
+            if (workerState == null) {
                 workerState = new WorkerStateImpl();
             }
             workerState.mId = id;
@@ -56,7 +53,7 @@ public class WorkerStateImpl implements WorkerState {
     public void recycle() {
         mCurrentTask = null;
         synchronized (sObjectPool) {
-            sObjectPool.add(this);
+            sObjectPool.release(this);
         }
     }
 
