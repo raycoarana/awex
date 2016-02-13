@@ -8,11 +8,11 @@ class RealTimeWorker implements Runnable {
 
     public RealTimeWorker(long id, Task task, Logger logger) {
         mId = id;
-        Thread mThread = new Thread(this, "Awex real-time worker " + id);
+        Thread thread = new Thread(this, "Awex real-time worker " + id);
         mTask = task;
         mLogger = logger;
 
-        mThread.start();
+        thread.start();
     }
 
     @Override
@@ -21,21 +21,19 @@ class RealTimeWorker implements Runnable {
             mLogger.v("Worker " + mId + " starting...");
         }
         try {
-            try {
-                if (mLogger.isEnabled()) {
-                    mLogger.v("Worker " + mId + " start executing task " + mTask.getId());
-                }
-                mTask.execute();
-                if (mLogger.isEnabled()) {
-                    mLogger.v("Worker " + mId + " ends executing task " + mTask.getId());
-                }
-            } catch (InterruptedException e) {
-                Thread.interrupted();
+            if (mLogger.isEnabled()) {
+                mLogger.v("Worker " + mId + " start executing task " + mTask.getId());
             }
+            mTask.execute();
+            if (mLogger.isEnabled()) {
+                mLogger.v("Worker " + mId + " ends executing task " + mTask.getId());
+            }
+        } catch (InterruptedException ignored) {
         } finally {
             if (mLogger.isEnabled()) {
                 mLogger.v("Worker " + mId + " dies");
             }
         }
     }
+
 }

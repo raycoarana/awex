@@ -267,17 +267,9 @@ public class ArrayMap<K, V> implements Map<K, V> {
     int indexOfValue(Object value) {
         final int N = mSize * 2;
         final Object[] array = mArray;
-        if (value == null) {
-            for (int i = 1; i < N; i += 2) {
-                if (array[i] == null) {
-                    return i >> 1;
-                }
-            }
-        } else {
-            for (int i = 1; i < N; i += 2) {
-                if (value.equals(array[i])) {
-                    return i >> 1;
-                }
+        for (int i = 1; i < N; i += 2) {
+            if (value.equals(array[i])) {
+                return i >> 1;
             }
         }
         return -1;
@@ -301,6 +293,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * @return Returns the value associated with the given key,
      * or null if there is no such key.
      */
+    @SuppressWarnings("unchecked")
     public V get(Object key) {
         final int index = indexOfKey(key);
         return index >= 0 ? (V) mArray[(index << 1) + 1] : null;
@@ -312,6 +305,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * @param index The desired index, must be between 0 and {@link #size()}-1.
      * @return Returns the key stored at the given index.
      */
+    @SuppressWarnings("unchecked")
     public K keyAt(int index) {
         return (K) mArray[index << 1];
     }
@@ -322,22 +316,9 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * @param index The desired index, must be between 0 and {@link #size()}-1.
      * @return Returns the value stored at the given index.
      */
+    @SuppressWarnings("unchecked")
     public V valueAt(int index) {
         return (V) mArray[(index << 1) + 1];
-    }
-
-    /**
-     * Set the value at a given index in the array.
-     *
-     * @param index The desired index, must be between 0 and {@link #size()}-1.
-     * @param value The new value to store at this index.
-     * @return Returns the previous value at the given index.
-     */
-    public V setValueAt(int index, V value) {
-        index = (index << 1) + 1;
-        V old = (V) mArray[index];
-        mArray[index] = value;
-        return old;
     }
 
     /**
@@ -356,6 +337,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * @return Returns the old value that was stored for the given key, or null if there
      * was no such key.
      */
+    @SuppressWarnings("unchecked")
     public V put(K key, V value) {
         final int hash = key.hashCode();
         int index = indexOf(key, hash);
@@ -416,6 +398,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
             return mIndex < mSize;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public T next() {
             Object res = mArray[(mIndex << 1) + mOffset];
@@ -424,16 +407,6 @@ public class ArrayMap<K, V> implements Map<K, V> {
             return (T) res;
         }
 
-        @Override
-        public void remove() {
-            if (!mCanRemove) {
-                throw new IllegalStateException();
-            }
-            mIndex--;
-            mSize--;
-            mCanRemove = false;
-            removeAt(mIndex);
-        }
     }
 
     /**
@@ -481,6 +454,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
      * @param index The desired index, must be between 0 and {@link #size()}-1.
      * @return Returns the value that was stored at this index.
      */
+    @SuppressWarnings("unchecked")
     public V removeAt(int index) {
         final Object old = mArray[(index << 1) + 1];
         if (mSize <= 1) {
@@ -550,23 +524,17 @@ public class ArrayMap<K, V> implements Map<K, V> {
                 return false;
             }
 
-            try {
-                for (int i = 0; i < mSize; i++) {
-                    K key = keyAt(i);
-                    V mine = valueAt(i);
-                    Object theirs = map.get(key);
-                    if (mine == null) {
-                        if (theirs != null || !map.containsKey(key)) {
-                            return false;
-                        }
-                    } else if (!mine.equals(theirs)) {
+            for (int i = 0; i < mSize; i++) {
+                K key = keyAt(i);
+                V mine = valueAt(i);
+                Object theirs = map.get(key);
+                if (mine == null) {
+                    if (theirs != null || !map.containsKey(key)) {
                         return false;
                     }
+                } else if (!mine.equals(theirs)) {
+                    return false;
                 }
-            } catch (NullPointerException ignored) {
-                return false;
-            } catch (ClassCastException ignored) {
-                return false;
             }
             return true;
         }
@@ -583,7 +551,7 @@ public class ArrayMap<K, V> implements Map<K, V> {
         int result = 0;
         for (int i = 0, v = 1, s = mSize; i < s; i++, v += 2) {
             Object value = array[v];
-            result += hashes[i] ^ (value == null ? 0 : value.hashCode());
+            result += hashes[i] ^ (value == null ? 0 : value != this ? value.hashCode() : super.hashCode());
         }
         return result;
     }

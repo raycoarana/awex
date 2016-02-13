@@ -67,10 +67,6 @@ class Worker implements Runnable {
                     }
                 }
             }
-        } catch (IllegalStateException ex) {
-            if (mLogger.isEnabled()) {
-                mLogger.v("Worker aborted with illegal state exception: " + ex.getMessage());
-            }
         } finally {
             if (mLogger.isEnabled()) {
                 mLogger.v("Worker " + mId + " dies");
@@ -89,8 +85,6 @@ class Worker implements Runnable {
 
         Thread.State state = mThread.getState();
         switch (state) {
-            case NEW:
-                return State.NEW;
             case RUNNABLE:
                 return State.RUNNABLE;
             case BLOCKED:

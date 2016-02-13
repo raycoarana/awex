@@ -85,7 +85,7 @@ public abstract class PoolPolicy {
      * @param workerId id of the worker to remove from the queue
      */
     public void removeWorker(int queueId, int workerId) {
-        mPoolManager.removeWorker(queueId, workerId, false);
+        removeWorker(queueId, workerId, false);
     }
 
     /**
