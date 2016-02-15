@@ -5,17 +5,30 @@ import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
 
-abstract class AbstractTransformerPromise<T, U, P> extends AwexPromise<U, P> {
+import java.util.Arrays;
 
-    protected final Apply<T, U> mApply;
+class AbstractTransformerPromise<T, U, P> extends AwexPromise<U, P> {
+
+    protected final Apply[] mApplyChain;
+    protected final Promise mChainStarterPromise;
 
     public AbstractTransformerPromise(Awex awex, Promise<T, P> promise, Apply<T, U> apply) {
         super(awex);
 
-        mApply = apply;
-        promise.done(new DoneCallback<T>() {
+        if (promise instanceof AbstractTransformerPromise) {
+            AbstractTransformerPromise abstractTransformerPromise = (AbstractTransformerPromise) promise;
+            Apply[] applyChain = abstractTransformerPromise.mApplyChain;
+            mApplyChain = Arrays.copyOf(applyChain, applyChain.length + 1);
+            mApplyChain[applyChain.length] = apply;
+            mChainStarterPromise = abstractTransformerPromise.mChainStarterPromise;
+        } else {
+            mApplyChain = new Apply[]{apply};
+            mChainStarterPromise = promise;
+        }
+
+        mChainStarterPromise.done(new DoneCallback() {
             @Override
-            public void onDone(T result) {
+            public void onDone(Object result) {
                 AbstractTransformerPromise.this.apply(result);
             }
         }).fail(new FailCallback() {
@@ -31,13 +44,23 @@ abstract class AbstractTransformerPromise<T, U, P> extends AwexPromise<U, P> {
         });
     }
 
-    private void apply(T item) {
-        U result = mApply.apply(item);
-        if (result != null) {
-            resolve(result);
-        } else {
-            reject(new AbsentValueException());
+    @SuppressWarnings("unchecked")
+    private void apply(Object item) {
+        for (Apply apply : mApplyChain) {
+            if (apply.shouldApply(item)) {
+                item = apply.apply(item);
+            } else {
+                reject(new AbsentValueException());
+                return;
+            }
         }
+
+        resolve((U) item);
+    }
+
+    @Override
+    public Promise<U, P> done(DoneCallback<U> callback) {
+        return super.done(callback);
     }
 
 }

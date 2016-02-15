@@ -94,12 +94,22 @@ class AwexCollectionPromise<Result, Progress> extends AwexPromise<Collection<Res
 
     @Override
     public Promise<Result, Progress> singleOrFirst() {
-        return new MapperTransformerPromise<>(mAwex, this, new Mapper<Collection<Result>, Result>() {
+        return new AbstractTransformerPromise<>(mAwex, this, new Apply<Collection<Result>, Result>() {
             @Override
-            public Result map(Collection<Result> value) {
-                return value.size() > 0 ? value.iterator().next() : null;
+            public boolean shouldApply(Collection<Result> item) {
+                return item.size() > 0;
+            }
+
+            @Override
+            public Result apply(Collection<Result> item) {
+                return item.iterator().next();
             }
         });
+    }
+
+    @Override
+    public CollectionPromise<Result, Progress> applyNow() {
+        return this;
     }
 
 }

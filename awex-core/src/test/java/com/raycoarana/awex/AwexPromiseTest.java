@@ -10,11 +10,14 @@ import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
 import com.raycoarana.awex.callbacks.UIProgressCallback;
+import com.raycoarana.awex.transform.Func;
+import com.raycoarana.awex.transform.Mapper;
 
 import org.junit.Test;
 import org.mockito.Mock;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -601,4 +604,5 @@ public class AwexPromiseTest extends BasePromiseTest {
         pipedPromise.cancelTask();
         originalPromise.resolve(SOME_RESULT);
     }
+
 }

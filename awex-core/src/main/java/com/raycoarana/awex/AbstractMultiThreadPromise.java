@@ -16,9 +16,9 @@ class AbstractMultiThreadPromise<T, U, Progress> extends AbstractSingleThreadPro
     }
 
     @Override
-    protected void apply(Collection<T> items) {
+    protected void apply(Collection items) {
         int numberOfThreads = mAwex.getNumberOfThreads();
-        Collection<List<T>> itemsGroupedByThread = split(items, numberOfThreads);
+        Collection<List> itemsGroupedByThread = split(items, numberOfThreads);
         Collection<Promise<Collection<U>, Progress>> promises = launchAll(itemsGroupedByThread);
         AfterAllPromise<Collection<U>, Progress> afterAll = new AfterAllPromise<>(mAwex, promises);
         afterAll.done(new DoneCallback<MultipleResult<Collection<U>, Progress>>() {
@@ -44,13 +44,14 @@ class AbstractMultiThreadPromise<T, U, Progress> extends AbstractSingleThreadPro
         });
     }
 
-    private Collection<List<T>> split(Iterable<T> items, int groups) {
-        List<List<T>> listOfGroups = new ArrayList<>();
+    @SuppressWarnings("unchecked")
+    private Collection<List> split(Iterable items, int groups) {
+        List<List> listOfGroups = new ArrayList<>();
         for (int i = 0; i < groups; i++) {
-            listOfGroups.add(new ArrayList<T>());
+            listOfGroups.add(new ArrayList());
         }
         int itemIndex = 0;
-        for (T item : items) {
+        for (Object item : items) {
             listOfGroups.get(itemIndex % groups).add(item);
             itemIndex++;
         }
@@ -58,9 +59,9 @@ class AbstractMultiThreadPromise<T, U, Progress> extends AbstractSingleThreadPro
         return listOfGroups;
     }
 
-    private Collection<Promise<Collection<U>, Progress>> launchAll(Collection<List<T>> itemsGroupedByThread) {
+    private Collection<Promise<Collection<U>, Progress>> launchAll(Collection<List> itemsGroupedByThread) {
         List<Promise<Collection<U>, Progress>> allPromises = new ArrayList<>();
-        for (final Collection<T> items : itemsGroupedByThread) {
+        for (final Collection items : itemsGroupedByThread) {
             Promise<Collection<U>, Progress> promise = mAwex.submit(new Task<Collection<U>, Progress>() {
                 @Override
                 protected Collection<U> run() throws InterruptedException {

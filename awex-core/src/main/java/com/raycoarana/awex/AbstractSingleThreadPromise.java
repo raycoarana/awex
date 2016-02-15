@@ -5,27 +5,37 @@ import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 abstract class AbstractSingleThreadPromise<T, U, P> extends AwexCollectionPromise<U, P> {
 
-    protected final Apply<T, U> mApply;
+    protected final Apply[] mApplyChain;
+    protected final Promise mChainStarterPromise;
+    private boolean mIsAttach;
 
+    @SuppressWarnings("unchecked")
     public AbstractSingleThreadPromise(Awex awex, CollectionPromise<T, P> promise, Apply<T, U> apply) {
         super(awex);
 
-        mApply = apply;
-        promise.done(new DoneCallback<Collection<T>>() {
-            @Override
-            public void onDone(Collection<T> result) {
-                AbstractSingleThreadPromise.this.apply(result);
-            }
-        }).fail(new FailCallback() {
+        if (promise instanceof AbstractSingleThreadPromise && !((AbstractSingleThreadPromise) promise).mIsAttach) {
+            AbstractSingleThreadPromise abstractSingleThreadPromise = (AbstractSingleThreadPromise) promise;
+            Apply[] applyChain = abstractSingleThreadPromise.mApplyChain;
+            mApplyChain = Arrays.copyOf(applyChain, applyChain.length + 1);
+            mApplyChain[applyChain.length] = apply;
+            mChainStarterPromise = abstractSingleThreadPromise.mChainStarterPromise;
+        } else {
+            mApplyChain = new Apply[]{apply};
+            mChainStarterPromise = promise;
+        }
+
+        mChainStarterPromise.fail(new FailCallback() {
             @Override
             public void onFail(Exception exception) {
                 AbstractSingleThreadPromise.this.reject(exception);
             }
-        }).cancel(new CancelCallback() {
+        });
+        mChainStarterPromise.cancel(new CancelCallback() {
             @Override
             public void onCancel() {
                 AbstractSingleThreadPromise.this.cancelTask();
@@ -33,17 +43,75 @@ abstract class AbstractSingleThreadPromise<T, U, P> extends AwexCollectionPromis
         });
     }
 
-    protected void apply(Collection<T> items) {
+    @Override
+    public Promise<Collection<U>, P> done(DoneCallback<Collection<U>> callback) {
+        attachIfNecessary();
+        return super.done(callback);
+    }
+
+    @Override
+    public Collection<U> getResult() throws Exception {
+        attachIfNecessary();
+        return super.getResult();
+    }
+
+    @Override
+    public Collection<U> getResultOrDefault(Collection<U> defaultValue) throws InterruptedException {
+        attachIfNecessary();
+        return super.getResultOrDefault(defaultValue);
+    }
+
+    @Override
+    public Promise<U, P> singleOrFirst() {
+        return super.singleOrFirst();
+    }
+
+    @Override
+    public CollectionPromise<U, P> applyNow() {
+        attachIfNecessary();
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void attachIfNecessary() {
+        if (mIsAttach) {
+            return; //fast return without monitoring
+        }
+        synchronized (this) {
+            if (mIsAttach) {
+                return;
+            }
+            mIsAttach = true;
+            mChainStarterPromise.done(new DoneCallback<Collection>() {
+                @Override
+                public void onDone(Collection result) {
+                    AbstractSingleThreadPromise.this.apply(result);
+                }
+            });
+        }
+    }
+
+    protected void apply(Collection items) {
         Collection<U> results = applyToCollection(items);
         resolve(results);
     }
 
-    protected Collection<U> applyToCollection(Iterable<T> items) {
+    @SuppressWarnings("unchecked")
+    protected Collection<U> applyToCollection(Iterable items) {
         Collection<U> results = new ArrayList<>();
-        for (T item : items) {
-            U result = mApply.apply(item);
-            if (result != null) {
-                results.add(result);
+        for (Object item : items) {
+            boolean shouldBeAdded = true;
+            for (Apply apply : mApplyChain) {
+                if (apply.shouldApply(item)) {
+                    item = apply.apply(item);
+                } else {
+                    shouldBeAdded = false;
+                    break;
+                }
+            }
+
+            if (shouldBeAdded) {
+                results.add((U) item);
             }
         }
         return results;

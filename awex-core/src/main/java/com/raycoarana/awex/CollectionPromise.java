@@ -22,4 +22,5 @@ public interface CollectionPromise<T, P> extends Promise<Collection<T>, P> {
 
     Promise<T, P> singleOrFirst();
 
+    CollectionPromise<T, P> applyNow();
 }
