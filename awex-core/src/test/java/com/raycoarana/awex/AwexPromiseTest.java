@@ -515,4 +515,62 @@ public class AwexPromiseTest extends BasePromiseTest {
 
         assertThat(allOfPromise, instanceOf(AllOfPromise.class));
     }
+
+    @Test
+    public void shouldPipeResolveData() {
+        setUpAwex();
+
+        Promise<Integer, Void> originalPromise = new AwexPromise<>(mAwex, mTask);
+        Promise<Integer, Void> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        pipedPromise.done(mDoneCallback);
+
+        originalPromise.pipe(pipedPromise);
+        ((AwexPromise<Integer, Void>)originalPromise).resolve(SOME_RESULT);
+
+        verify(mDoneCallback).onDone(SOME_RESULT);
+    }
+
+    @Test
+    public void shouldPipeProgressData() throws Exception {
+        setUpAwex();
+
+        Promise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
+        Promise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        pipedPromise.progress(mProgressCallback);
+
+        originalPromise.pipe(pipedPromise);
+        ((AwexPromise<Integer, Float>)originalPromise).notifyProgress(SOME_PROGRESS);
+
+        verify(mProgressCallback).onProgress(SOME_PROGRESS);
+    }
+
+    @Test
+    public void shouldPipeFailureData() throws Exception {
+        setUpAwex();
+
+        Promise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
+        Promise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        pipedPromise.fail(mFailCallback);
+
+        Exception someException = new RuntimeException();
+
+        originalPromise.pipe(pipedPromise);
+        ((AwexPromise<Integer, Float>)originalPromise).reject(someException);
+
+        verify(mFailCallback).onFail(someException);
+    }
+
+    @Test
+    public void shouldPipeCancelEvent() throws Exception {
+        setUpAwex();
+
+        Promise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
+        Promise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        pipedPromise.cancel(mCancelCallback);
+
+        originalPromise.pipe(pipedPromise);
+        originalPromise.cancelTask();
+
+        verify(mCancelCallback).onCancel();
+    }
 }

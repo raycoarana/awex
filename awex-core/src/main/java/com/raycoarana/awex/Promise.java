@@ -110,6 +110,15 @@ public interface Promise<Result, Progress> {
      */
     Promise<Collection<Result>, Progress> and(Promise<Result, Progress> promise);
 
+    /**
+     * Connects this promise with the provided promise so any result, progress or exception produced
+     * in this promise is submitted to the provided promise.
+     *
+     * @param promise
+     * @return
+     */
+    Promise<Result, Progress> pipe(Promise<Result, Progress> promise);
+
     <U> Promise<U, Progress> mapSingle(Mapper<Result, U> mapper);
 
     /**

@@ -327,28 +327,7 @@ public class Awex {
             }
 
             taskToMerge.markQueue(null);
-            final AwexPromise promiseToMerge = (AwexPromise) taskToMerge.getPromise();
-            taskInQueue.getPromise().done(new DoneCallback() {
-                @Override
-                public void onDone(Object result) {
-                    promiseToMerge.resolve(result);
-                }
-            }).fail(new FailCallback() {
-                @Override
-                public void onFail(Exception exception) {
-                    promiseToMerge.reject(exception);
-                }
-            }).progress(new ProgressCallback() {
-                @Override
-                public void onProgress(Object progress) {
-                    promiseToMerge.notifyProgress(progress);
-                }
-            }).cancel(new CancelCallback() {
-                @Override
-                public void onCancel() {
-                    promiseToMerge.cancelTask();
-                }
-            });
+            taskInQueue.getPromise().pipe(taskToMerge.getPromise());
         }
 
         @Override

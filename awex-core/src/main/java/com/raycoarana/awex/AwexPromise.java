@@ -623,6 +623,38 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         return new AllOfPromise<>(mAwex, promises);
     }
 
+    @Override
+    public Promise<Result, Progress> pipe(final Promise<Result, Progress> promise) {
+        if (!(promise instanceof AwexPromise)) {
+            throw new IllegalArgumentException("Trying to do a pipe with a non Awex promise.");
+        }
+
+        final AwexPromise<Result, Progress> awexPromise = (AwexPromise<Result, Progress>) promise;
+
+        done(new DoneCallback<Result>() {
+            @Override
+            public void onDone(Result result) {
+                awexPromise.resolve(result);
+            }
+        }).fail(new FailCallback() {
+            @Override
+            public void onFail(Exception exception) {
+                awexPromise.reject(exception);
+            }
+        }).progress(new ProgressCallback<Progress>() {
+            @Override
+            public void onProgress(Progress progress) {
+                awexPromise.notifyProgress(progress);
+            }
+        }).cancel(new CancelCallback() {
+            @Override
+            public void onCancel() {
+                awexPromise.cancelTask();
+            }
+        });
+        return promise;
+    }
+
     private boolean shouldExecuteInBackground(AlwaysCallback callback) {
         return mUIThread.isCurrentThread() && !(callback instanceof UIAlwaysCallback);
     }
