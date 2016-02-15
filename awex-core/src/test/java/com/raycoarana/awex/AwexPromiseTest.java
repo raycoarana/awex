@@ -19,6 +19,8 @@ import java.util.Collection;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -520,12 +522,12 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldPipeResolveData() {
         setUpAwex();
 
-        Promise<Integer, Void> originalPromise = new AwexPromise<>(mAwex, mTask);
-        Promise<Integer, Void> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Void> originalPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Void> pipedPromise = new AwexPromise<>(mAwex, mTask);
         pipedPromise.done(mDoneCallback);
 
         originalPromise.pipe(pipedPromise);
-        ((AwexPromise<Integer, Void>)originalPromise).resolve(SOME_RESULT);
+        originalPromise.resolve(SOME_RESULT);
 
         verify(mDoneCallback).onDone(SOME_RESULT);
     }
@@ -534,12 +536,12 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldPipeProgressData() throws Exception {
         setUpAwex();
 
-        Promise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
-        Promise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
         pipedPromise.progress(mProgressCallback);
 
         originalPromise.pipe(pipedPromise);
-        ((AwexPromise<Integer, Float>)originalPromise).notifyProgress(SOME_PROGRESS);
+        originalPromise.notifyProgress(SOME_PROGRESS);
 
         verify(mProgressCallback).onProgress(SOME_PROGRESS);
     }
@@ -548,14 +550,14 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldPipeFailureData() throws Exception {
         setUpAwex();
 
-        Promise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
-        Promise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
         pipedPromise.fail(mFailCallback);
 
         Exception someException = new RuntimeException();
 
         originalPromise.pipe(pipedPromise);
-        ((AwexPromise<Integer, Float>)originalPromise).reject(someException);
+        originalPromise.reject(someException);
 
         verify(mFailCallback).onFail(someException);
     }
@@ -564,13 +566,39 @@ public class AwexPromiseTest extends BasePromiseTest {
     public void shouldPipeCancelEvent() throws Exception {
         setUpAwex();
 
-        Promise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
-        Promise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Float> originalPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Float> pipedPromise = new AwexPromise<>(mAwex, mTask);
         pipedPromise.cancel(mCancelCallback);
 
         originalPromise.pipe(pipedPromise);
         originalPromise.cancelTask();
 
         verify(mCancelCallback).onCancel();
+    }
+
+    @Test
+    public void shouldNotCancelOriginalPromiseWhenCancelPipedPromise() {
+        setUpAwex();
+
+        AwexPromise<Integer, Void> originalPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Void> pipedPromise = new AwexPromise<>(mAwex, mTask);
+
+        originalPromise.pipe(pipedPromise);
+        pipedPromise.cancelTask();
+
+        assertFalse(originalPromise.isCancelled());
+        assertTrue(pipedPromise.isCancelled());
+    }
+
+    @Test
+    public void shouldNotFailWhenCancelPipedPromiseAndThenOriginalPromiseIsResolved() {
+        setUpAwex();
+
+        AwexPromise<Integer, Void> originalPromise = new AwexPromise<>(mAwex, mTask);
+        AwexPromise<Integer, Void> pipedPromise = new AwexPromise<>(mAwex, mTask);
+
+        originalPromise.pipe(pipedPromise);
+        pipedPromise.cancelTask();
+        originalPromise.resolve(SOME_RESULT);
     }
 }

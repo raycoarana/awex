@@ -199,9 +199,6 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         List<FailCallback> failCallbacks;
         List<AlwaysCallback> alwaysCallbacks;
         synchronized (this) {
-            if (mState == STATE_CANCELLED) {
-                return this;
-            }
             validateInPendingState();
 
             mState = STATE_REJECTED;
@@ -634,17 +631,29 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
         done(new DoneCallback<Result>() {
             @Override
             public void onDone(Result result) {
-                awexPromise.resolve(result);
+                synchronized (awexPromise) {
+                    if (awexPromise.isPending()) {
+                        awexPromise.resolve(result);
+                    }
+                }
             }
         }).fail(new FailCallback() {
             @Override
             public void onFail(Exception exception) {
-                awexPromise.reject(exception);
+                synchronized (awexPromise) {
+                    if (awexPromise.isPending()) {
+                        awexPromise.reject(exception);
+                    }
+                }
             }
         }).progress(new ProgressCallback<Progress>() {
             @Override
             public void onProgress(Progress progress) {
-                awexPromise.notifyProgress(progress);
+                synchronized (awexPromise) {
+                    if (awexPromise.isPending()) {
+                        awexPromise.notifyProgress(progress);
+                    }
+                }
             }
         }).cancel(new CancelCallback() {
             @Override
