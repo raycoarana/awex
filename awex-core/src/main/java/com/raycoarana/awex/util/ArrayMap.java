@@ -407,6 +407,11 @@ public class ArrayMap<K, V> implements Map<K, V> {
             return (T) res;
         }
 
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
+
     }
 
     /**
