@@ -78,6 +78,7 @@ public interface Promise<Result, Progress> {
      * the value of the promise in case of resolved or return the defaultValue in any other case.
      *
      * @param defaultValue default value to return in case that the promise was rejected or cancelled
+     * @throws InterruptedException when the thread is interrupted while waiting for result
      * @return the result of the task if any
      */
     Result getResultOrDefault(Result defaultValue) throws InterruptedException;
@@ -96,8 +97,8 @@ public interface Promise<Result, Progress> {
      * Returns a promise that will be resolved with the value of the first resolved promise or
      * fail if both promises (current and provided as parameter) fails
      *
-     * @param promise
-     * @return
+     * @param promise the other promise to evaluate
+     * @return a new promise that will be resolved when the first promise is resolved
      */
     Promise<Result, Progress> or(Promise<Result, Progress> promise);
 
@@ -105,8 +106,8 @@ public interface Promise<Result, Progress> {
      * Returns a promise that will be resolved if both promises have values or fail if the current
      * promise or the promise of the parameter fails.
      *
-     * @param promise
-     * @return
+     * @param promise the other promise to evaluate
+     * @return a new promise that will be resolved when both promises are resolved
      */
     Promise<Collection<Result>, Progress> and(Promise<Result, Progress> promise);
 
@@ -114,8 +115,8 @@ public interface Promise<Result, Progress> {
      * Connects this promise with the provided promise so any result, progress or exception produced
      * in this promise is submitted to the provided promise.
      *
-     * @param promise
-     * @return
+     * @param promise the promise to connect to
+     * @return the provided promise
      */
     Promise<Result, Progress> pipe(Promise<Result, Progress> promise);
 
@@ -124,8 +125,8 @@ public interface Promise<Result, Progress> {
     /**
      * Filters the item, if the result of the promise does not match the filter, the promise is rejected
      *
-     * @param filter
-     * @return
+     * @param filter filter to apply
+     * @return a new promise with the result of the filter
      */
     Promise<Result, Progress> filterSingle(Filter<Result> filter);
 
@@ -133,7 +134,8 @@ public interface Promise<Result, Progress> {
      * Creates a collection promise from this promise. If this promise result is a collection,
      * it will be converted, otherwise, the result will be inserted in a collection.
      *
-     * @return
+     * @param <T> type of items in the collection
+     * @return the promise transformed as collection promise
      */
     <T> CollectionPromise<T, Progress> stream();
 

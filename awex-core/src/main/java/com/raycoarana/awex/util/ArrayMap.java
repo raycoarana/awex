@@ -21,8 +21,8 @@ import java.util.Iterator;
 /**
  * ArrayMap based on SimpleArrayMap of Android implementation
  *
- * @param <K>
- * @param <V>
+ * @param <K> type of key
+ * @param <V> type of value
  */
 public class ArrayMap<K, V> implements Map<K, V> {
 
@@ -194,6 +194,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     /**
      * Create a new ArrayMap with a given initial capacity.
+     *
+     * @param capacity initial capacity
      */
     public ArrayMap(int capacity) {
         if (capacity == 0) {
@@ -207,6 +209,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     /**
      * Create a new ArrayMap with the mappings from the given ArrayMap.
+     *
+     * @param map initial values for this array map
      */
     public ArrayMap(ArrayMap<K, V> map) {
         this();
@@ -230,6 +234,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
     /**
      * Ensure the array map can hold at least <var>minimumCapacity</var>
      * items.
+     *
+     * @param minimumCapacity items that this array map must be able to hold
      */
     public void ensureCapacity(int minimumCapacity) {
         if (mHashes.length < minimumCapacity) {
@@ -323,6 +329,8 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     /**
      * Return true if the array map contains no items.
+     *
+     * @return true if the array map contains no items
      */
     public boolean isEmpty() {
         return mSize <= 0;
@@ -512,11 +520,12 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     /**
      * {@inheritDoc}
-     * <p/>
+     *
      * <p>This implementation returns false if the object is not a map, or
      * if the maps have different sizes. Otherwise, for each key in this map,
      * values of both maps are compared. If the values for any key are not
      * equal, the method returns false, otherwise it returns true.
+     * </p>
      */
     @Override
     public boolean equals(Object object) {
@@ -569,10 +578,11 @@ public class ArrayMap<K, V> implements Map<K, V> {
 
     /**
      * {@inheritDoc}
-     * <p/>
+     *
      * <p>This implementation composes a string by iterating over its mappings. If
      * this map contains itself as a key or a value, the string "(this Map)"
      * will appear in its place.
+     * </p>
      */
     @Override
     public String toString() {

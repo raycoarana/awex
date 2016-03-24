@@ -136,6 +136,7 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
      *
      * @param result value used to resolve the promise
      * @throws IllegalStateException if the promise is not in pending state
+     * @return this promise
      */
     @SuppressWarnings("unchecked")
     public Promise<Result, Progress> resolve(Result result) {
@@ -193,6 +194,7 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
      * Rejects the promise, triggers any fail/always callbacks
      *
      * @param ex exception that represents the rejection of the promise
+     * @return this promise
      */
     @SuppressWarnings("unchecked")
     public Promise<Result, Progress> reject(Exception ex) {

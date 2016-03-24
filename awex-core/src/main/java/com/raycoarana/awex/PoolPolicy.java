@@ -72,6 +72,7 @@ public abstract class PoolPolicy {
      * this method returns.
      *
      * @param queueId id of the queue where the worker will be listen for tasks to execute
+     * @return id of the created worker
      */
     public int createWorker(int queueId) {
         return mPoolManager.createWorker(queueId);

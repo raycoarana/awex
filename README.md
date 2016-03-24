@@ -276,12 +276,12 @@ Download via Maven:
 <dependency>
   <groupId>com.raycoarana.awex</groupId>
   <artifactId>awex-android</artifactId>
-  <version>X.X.X</version>
+  <version>0.0.1</version>
 </dependency>
 ```
 or Gradle:
 ```groovy
-compile 'com.raycoarana.awex:awex-android:X.X.X'
+compile 'com.raycoarana.awex:awex-android:0.0.1'
 ```
 
 License

@@ -210,6 +210,7 @@ public class Awex {
      *
      * @param value    value to use to resolve the promise, in case that the value is null a rejected promise is returned
      * @param <Result> type of the result
+     * @param <Progress> type of the progress
      * @return a promise already resolved
      */
     @SuppressWarnings("unchecked")

@@ -45,10 +45,10 @@ public interface WorkerState {
          * <li>{@link Thread#join() Thread.join} with no timeout</li>
          * <li>{@link LockSupport#park() LockSupport.park}</li>
          * </ul>
-         * <p/>
+         *
          * <p>A worker in the waiting state is waiting for another thread to
          * perform a particular action.
-         * <p/>
+         * </p>
          * For example, the worker thread that has called <tt>Object.wait()</tt>
          * on an object is waiting for another thread to call
          * <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
