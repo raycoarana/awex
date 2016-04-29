@@ -224,7 +224,7 @@ public class Awex {
         }
     }
 
-    public <Result, Progress> AwexPromise<Result, Progress> newAwexPromise() {
+    public <Result, Progress> ResolvablePromise<Result, Progress> newAwexPromise() {
         return new AwexPromise<>(this);
     }
 

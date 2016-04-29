@@ -5,6 +5,7 @@ import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.callbacks.ProgressCallback;
+import com.raycoarana.awex.callbacks.ThenCallback;
 import com.raycoarana.awex.transform.Filter;
 import com.raycoarana.awex.transform.Mapper;
 
@@ -92,6 +93,8 @@ public interface Promise<Result, Progress> {
     Promise<Result, Progress> cancel(CancelCallback callback);
 
     Promise<Result, Progress> always(AlwaysCallback callback);
+
+    <R, P> Promise<R, P> then(ThenCallback<Result, R, P> callback);
 
     /**
      * Returns a promise that will be resolved with the value of the first resolved promise or

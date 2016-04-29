@@ -5,22 +5,23 @@ import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.callbacks.ProgressCallback;
+import com.raycoarana.awex.callbacks.ThenCallback;
 import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
 import com.raycoarana.awex.callbacks.UIFailCallback;
 import com.raycoarana.awex.callbacks.UIProgressCallback;
-import com.raycoarana.awex.transform.Func;
-import com.raycoarana.awex.transform.Mapper;
 
 import org.junit.Test;
 import org.mockito.Mock;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -603,6 +604,42 @@ public class AwexPromiseTest extends BasePromiseTest {
         originalPromise.pipe(pipedPromise);
         pipedPromise.cancelTask();
         originalPromise.resolve(SOME_RESULT);
+    }
+
+    @Test
+    public void shouldExecuteSubsequentThenOperatorInOrder() {
+        setUpAwex();
+
+        AwexPromise<Integer, Void> originalPromise = new AwexPromise<>(mAwex, mTask);
+        final AwexPromise<Integer, Void> firstOperationPromise = new AwexPromise<>(mAwex, mTask);
+        final AwexPromise<Integer, Void> secondOperationPromise = new AwexPromise<>(mAwex, mTask);
+
+        final List<Integer> values = new ArrayList<>();
+
+        originalPromise.then(new ThenCallback<Integer, Integer, Void>() {
+            @Override
+            public Promise<Integer, Void> then(Integer result) {
+                values.add(result);
+                return firstOperationPromise;
+            }
+        }).then(new ThenCallback<Integer, Integer, Void>() {
+            @Override
+            public Promise<Integer, Void> then(Integer result) {
+                values.add(result);
+                return secondOperationPromise;
+            }
+        }).done(new DoneCallback<Integer>() {
+            @Override
+            public void onDone(Integer result) {
+                values.add(result);
+            }
+        });
+
+        secondOperationPromise.resolve(3);
+        firstOperationPromise.resolve(2);
+        originalPromise.resolve(1);
+
+        assertArrayEquals(new Integer[]{1, 2, 3}, values.toArray(new Integer[3]));
     }
 
 }

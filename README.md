@@ -214,7 +214,7 @@ Not just promises
 -----------------
 There are many more things you can do with Awex and its promises.
 
-###OR operator
+### OR operator
 
 ```java
 awex.submit(new Task<Integer>() {
@@ -233,7 +233,7 @@ awex.submit(new Task<Integer>() {
 ```
 Awex supports doing an OR of many promises using the _anyOf()_ method in the Awex object.
 
-###AND operator
+### AND operator
 
 ```java
 awex.submit(new Task<Integer>() {
@@ -252,7 +252,7 @@ awex.submit(new Task<Integer>() {
 ```
 Awex supports doing an AND of many promises using the _allOf()_ method in the Awex object.
 
-###AfterAll operator
+### AfterAll operator
 
 ```java
 awex.afterAll(awex.of(41), awex.of(42), awex.of(43))
@@ -264,9 +264,26 @@ awex.afterAll(awex.of(41), awex.of(42), awex.of(43))
     });
 ```
 
-###Filter operator
+### Filter operator
 
-###Map operator
+### Map operator
+
+### Then operator
+Then operator receives the result of the promise and returns a new promise
+that will be resolved when the inner operation finishes.
+Imagine some cloud filesystem API that works completely async where we have
+a getFolder() and getFile() methods that returns Promises; with Awex
+could be used in this way:
+
+```java
+private Promise<Journey, Void> loadJourney(String userId, String journeyId) {
+    return getFolder(getRootFolder(), userId).then(userFolder -> getFolder(userFolder, journeyId))
+                                             .then(journeyFolder -> getFile(journeyFolder, "journey.bin"))
+                                             .mapSingle(journeyFile -> deserialize(journeyFile));
+}
+```
+
+All async, no blocked threads, fluent syntax and no boilerplate.
 
 Download
 --------
@@ -276,12 +293,12 @@ Download via Maven:
 <dependency>
   <groupId>com.raycoarana.awex</groupId>
   <artifactId>awex-android</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 </dependency>
 ```
 or Gradle:
 ```groovy
-compile 'com.raycoarana.awex:awex-android:0.0.1'
+compile 'com.raycoarana.awex:awex-android:0.0.2'
 ```
 
 License

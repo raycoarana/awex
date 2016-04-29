@@ -5,6 +5,7 @@ import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.callbacks.ProgressCallback;
+import com.raycoarana.awex.callbacks.ThenCallback;
 import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
 import com.raycoarana.awex.callbacks.UIDoneCallback;
@@ -23,7 +24,7 @@ import java.util.List;
 /**
  * Implementation of task promise
  */
-class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
+class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progress> {
 
     protected final Awex mAwex;
 
@@ -609,6 +610,25 @@ class AwexPromise<Result, Progress> implements Promise<Result, Progress> {
                 break;
         }
         return this;
+    }
+
+    @Override
+    public <R, P> Promise<R, P> then(final ThenCallback<Result, R, P> callback) {
+        final ResolvablePromise<R, P> promise = mAwex.newAwexPromise();
+
+        fail(new FailCallback() {
+            @Override
+            public void onFail(Exception exception) {
+                reject(exception);
+            }
+        }).done(new DoneCallback<Result>() {
+            @Override
+            public void onDone(Result result) {
+                callback.then(result).pipe(promise);
+            }
+        });
+
+        return promise;
     }
 
     @Override

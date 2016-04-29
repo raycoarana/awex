@@ -39,6 +39,12 @@ public class BasePromiseTest {
         when(mAwex.provideUIThread()).thenReturn(mUIThread);
         when(mAwex.getNumberOfThreads()).thenReturn(4);
 
+        when(mAwex.newAwexPromise()).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return new AwexPromise<>(mAwex, mTask);
+            }
+        });
         doAnswer(new Answer<Promise>() {
             @Override
             public Promise answer(InvocationOnMock invocation) throws Throwable {
