@@ -11,3 +11,5 @@ script:
     - ./gradlew assembleDebug assembleRelease check
 after_success:
     - ./gradlew jacocoTestReport coveralls
+after_failure:
+    - cat awex-android/build/outputs/lint-results-*.html
