@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/raycoarana/awex.svg?branch=master)](https://travis-ci.org/raycoarana/awex)
 [![Coverage Status](https://coveralls.io/repos/raycoarana/awex/badge.svg?branch=master&service=github)](https://coveralls.io/github/raycoarana/awex?branch=master)
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-awex-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/3557)
 
 AWEX (Android Work EXecutor) is a thread pool to execute tasks that uses Promises to deliver results. Promises that can be cancelled, can be combined or even can process collections in parallel automatically.
 
@@ -12,14 +13,16 @@ First thing you need to do is setup an Awex object, that will be your thread poo
 ```java
 public class AwexProvider {
 
-    private static final int MIN_THREADS = 2;
+    private static final int WORKER_PRIORITY = Process.THREAD_PRIORITY_DEFAULT + Process.THREAD_PRIORITY_LESS_FAVORABLE;
     private static final int MAX_THREADS = 4;
 
     private static Awex sInstance = null;
 
     public static synchronized Awex get() {
         if (sInstance == null) {
-            sInstance = new Awex(new AndroidUIThread(), new AndroidLogger(), MIN_THREADS, MAX_THREADS);
+            sInstance = new Awex(new AndroidThreadHelper(), 
+                                 new AndroidLogger(), 
+                                 new LinearWithRealTimePriorityPolicy(WORKER_PRIORITY, MAX_THREADS));
         }
         return sInstance;
     }
@@ -266,7 +269,45 @@ awex.afterAll(awex.of(41), awex.of(42), awex.of(43))
 
 ### Filter operator
 
+FilterSingle
+
+```java
+Promise<Integer, Void> promise = awex.of(42);
+
+promise = promise.filterSingle(value -> value > 45);
+
+promise.getResult(); //This will throw an exception, promise don't have any value
+```
+
+Filter all
+
+Filter in parallel
+
 ### Map operator
+
+Mapsingle
+
+MapSingle operator return a new promise with the result mapped using the
+method provided. For eaxmple in this case we see how we can map an Integer
+value of a promise to an String value.
+
+```java
+Promise<Integer, Void> promise = mAwex.of(42);
+
+Promise<String, Void> mappedPromise = promise.mapSingle(String::valueOf);
+
+String value = mappedPromise.getResult(); //Value will be "42"
+```
+
+Map all
+
+Map in parallel
+
+### Foreach operator
+
+Foreach
+
+ForeachParallel
 
 ### Then operator
 Then operator receives the result of the promise and returns a new promise

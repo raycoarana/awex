@@ -11,13 +11,14 @@ import static org.junit.Assert.assertEquals;
 
 public class PoolManagerTest {
 
+    private static final int SOME_THREAD_PRIORITY = 1;
     private static final Integer SOME_VALUE = 42;
     private static final Integer SOME_OTHER_VALUE = 24;
     private static final int FIRST_QUEUE = 1;
     private static final int SECOND_QUEUE = 2;
 
     @Mock
-    private UIThread mUIThread;
+    private ThreadHelper mThreadHelper;
 
     private Logger mLogger = new ConsoleLogger();
 
@@ -54,11 +55,11 @@ public class PoolManagerTest {
                 mLogger.v(poolState.toString());
                 if (firstTask == task) {
                     createQueue(FIRST_QUEUE);
-                    createWorker(FIRST_QUEUE);
+                    createWorker(FIRST_QUEUE, SOME_THREAD_PRIORITY);
                     queueTask(FIRST_QUEUE, task);
                 } else {
                     createQueue(SECOND_QUEUE);
-                    createWorker(SECOND_QUEUE);
+                    createWorker(SECOND_QUEUE, SOME_THREAD_PRIORITY);
                     queueTask(SECOND_QUEUE, task);
                 }
             }
@@ -125,7 +126,7 @@ public class PoolManagerTest {
             @Override
             public void onStartUp() {
                 createQueue(FIRST_QUEUE);
-                createWorker(FIRST_QUEUE);
+                createWorker(FIRST_QUEUE, SOME_THREAD_PRIORITY);
             }
 
             @Override
@@ -178,13 +179,13 @@ public class PoolManagerTest {
             @Override
             public void onStartUp() {
                 createQueue(FIRST_QUEUE);
-                createWorker(FIRST_QUEUE);
+                createWorker(FIRST_QUEUE, SOME_THREAD_PRIORITY);
             }
 
             @Override
             public void onTaskAdded(PoolState poolState, Task task) {
                 assertEquals(1, poolState.getQueue(FIRST_QUEUE).numberOfWorkers());
-                secondWorkerId = createWorker(FIRST_QUEUE);
+                secondWorkerId = createWorker(FIRST_QUEUE, SOME_THREAD_PRIORITY);
                 queueTask(FIRST_QUEUE, task);
             }
 
@@ -219,7 +220,7 @@ public class PoolManagerTest {
     }
 
     private void setUpAwex(PoolPolicy poolPolicy) {
-        mAwex = new Awex(mUIThread, new ConsoleLogger(), poolPolicy);
+        mAwex = new Awex(mThreadHelper, new ConsoleLogger(), poolPolicy);
     }
 
 }

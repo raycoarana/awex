@@ -1,6 +1,6 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.policy.LinearWithRealTimePriority;
+import com.raycoarana.awex.policy.LinearWithRealTimePriorityPolicy;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +16,7 @@ public class AwexPerf extends BasePerf {
 
     int numberOfTasks = 1000;
 
-    private UIThread mUIThread = new UIThread() {
+    private ThreadHelper mThreadHelper = new ThreadHelper() {
         @Override
         public boolean isCurrentThread() {
             return false;
@@ -24,6 +24,16 @@ public class AwexPerf extends BasePerf {
 
         @Override
         public void post(Runnable runnable) {
+
+        }
+
+        @Override
+        public void setUpPriorityToCurrentThread(int priority) {
+
+        }
+
+        @Override
+        public void setUpPriorityToRealTimeThread() {
 
         }
     };
@@ -50,7 +60,7 @@ public class AwexPerf extends BasePerf {
     @Before
     public void setUp() {
         super.setUp();
-        mAwex = new Awex(mUIThread, mLogger, new LinearWithRealTimePriority(4));
+        mAwex = new Awex(mThreadHelper, mLogger, new LinearWithRealTimePriorityPolicy(4));
         mThreadPool = Executors.newFixedThreadPool(4);
     }
 

@@ -1,11 +1,8 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.policy.LinearWithRealTimePriority;
 import com.raycoarana.awex.state.PoolState;
 
 public abstract class PoolPolicy {
-
-    public static final PoolPolicy DEFAULT = new LinearWithRealTimePriority();
 
     private PoolManager mPoolManager;
 
@@ -71,11 +68,16 @@ public abstract class PoolPolicy {
      * start executing tasks in that queue as soon as this method is executed and even before
      * this method returns.
      *
+     * The priority of the thread is setup at worker start-up by ThreadHelper class used to
+     * initialize Awex. The priority value will depend on the implementation of
+     * @see ThreadHelper#setUpPriorityToCurrentThread as it will vary depending of the system.
+     *
      * @param queueId id of the queue where the worker will be listen for tasks to execute
+     * @param priority priority of the worker thread, @see com.raycoarana.awex.ThreadHelper#setUpPriorityToCurrentThread
      * @return id of the created worker
      */
-    public int createWorker(int queueId) {
-        return mPoolManager.createWorker(queueId);
+    public int createWorker(int queueId, int priority) {
+        return mPoolManager.createWorker(queueId, priority);
     }
 
     /**

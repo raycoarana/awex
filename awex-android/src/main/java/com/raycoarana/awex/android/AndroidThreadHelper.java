@@ -4,17 +4,18 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Process;
 
-import com.raycoarana.awex.UIThread;
+import com.raycoarana.awex.ThreadHelper;
 
 /**
- * Android basic implementation of UIThread
+ * Android basic implementation of ThreadHelper
  */
-public class AndroidUIThread implements UIThread {
+public class AndroidThreadHelper implements ThreadHelper {
 
 	private final Handler mHandler;
 
-	public AndroidUIThread() {
+	public AndroidThreadHelper() {
 		mHandler = new Handler(Looper.getMainLooper());
 	}
 
@@ -30,6 +31,16 @@ public class AndroidUIThread implements UIThread {
 	@Override
 	public void post(Runnable runnable) {
 		mHandler.post(runnable);
+	}
+
+	@Override
+	public void setUpPriorityToCurrentThread(int priority) {
+        android.os.Process.setThreadPriority(priority);
+	}
+
+	@Override
+	public void setUpPriorityToRealTimeThread() {
+		setUpPriorityToCurrentThread(Process.THREAD_PRIORITY_DEFAULT + Process.THREAD_PRIORITY_LESS_FAVORABLE);
 	}
 
 }

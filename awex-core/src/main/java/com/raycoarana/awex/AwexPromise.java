@@ -29,7 +29,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     protected final Awex mAwex;
 
     private final Task mTask;
-    private final UIThread mUIThread;
+    private final ThreadHelper mThreadHelper;
     private final Logger mLogger;
     private final long mId;
 
@@ -125,7 +125,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
         mAwex = awex;
         mTask = task;
         mId = mTask != null ? mTask.getId() : -1;
-        mUIThread = awex.provideUIThread();
+        mThreadHelper = awex.provideUIThread();
         mLogger = awex.provideLogger();
         mState = STATE_PENDING;
         mCallbacks = Callbacks.get();
@@ -171,8 +171,8 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private void triggerDone(final DoneCallback<Result> callback) {
-        if (callback instanceof UIDoneCallback && !mUIThread.isCurrentThread()) {
-            mUIThread.post(new CancellableRunnable() {
+        if (callback instanceof UIDoneCallback && !mThreadHelper.isCurrentThread()) {
+            mThreadHelper.post(new CancellableRunnable() {
                 @Override
                 public void execute() {
                     tryTrigger(callback, mResult);
@@ -228,8 +228,8 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private void triggerFail(final FailCallback callback) {
-        if (callback instanceof UIFailCallback && !mUIThread.isCurrentThread()) {
-            mUIThread.post(new CancellableRunnable() {
+        if (callback instanceof UIFailCallback && !mThreadHelper.isCurrentThread()) {
+            mThreadHelper.post(new CancellableRunnable() {
                 @Override
                 public void execute() {
                     tryTrigger(callback, mException);
@@ -255,8 +255,8 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private void triggerAlways(final AlwaysCallback callback) {
-        if (callback instanceof UIAlwaysCallback && !mUIThread.isCurrentThread()) {
-            mUIThread.post(new CancellableRunnable() {
+        if (callback instanceof UIAlwaysCallback && !mThreadHelper.isCurrentThread()) {
+            mThreadHelper.post(new CancellableRunnable() {
                 @Override
                 public void execute() {
                     tryTrigger(callback);
@@ -306,8 +306,8 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private void triggerProgress(final ProgressCallback<Progress> callback, final Progress progress) {
-        if (callback instanceof UIProgressCallback && !mUIThread.isCurrentThread()) {
-            mUIThread.post(new CancellableRunnable() {
+        if (callback instanceof UIProgressCallback && !mThreadHelper.isCurrentThread()) {
+            mThreadHelper.post(new CancellableRunnable() {
                 @Override
                 public void execute() {
                     tryTrigger(callback, progress);
@@ -352,7 +352,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
             clearCallbacks();
         }
         if (state == STATE_PENDING) {
-            if (mUIThread.isCurrentThread() && cancelCallbacks.size() > 0) {
+            if (mThreadHelper.isCurrentThread() && cancelCallbacks.size() > 0) {
                 mAwex.submit(new Runnable() {
 
                     @Override
@@ -381,8 +381,8 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private void triggerCancel(final CancelCallback callback) {
-        if (callback instanceof UICancelCallback && !mUIThread.isCurrentThread()) {
-            mUIThread.post(new Runnable() {
+        if (callback instanceof UICancelCallback && !mThreadHelper.isCurrentThread()) {
+            mThreadHelper.post(new Runnable() {
                 @Override
                 public void run() {
                     tryTrigger(callback);
@@ -510,7 +510,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private boolean shouldExecuteInBackground(DoneCallback<Result> callback) {
-        return mUIThread.isCurrentThread() && !(callback instanceof UIDoneCallback);
+        return mThreadHelper.isCurrentThread() && !(callback instanceof UIDoneCallback);
     }
 
     @Override
@@ -540,7 +540,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private boolean shouldExecuteInBackground(FailCallback callback) {
-        return mUIThread.isCurrentThread() && !(callback instanceof UIFailCallback);
+        return mThreadHelper.isCurrentThread() && !(callback instanceof UIFailCallback);
     }
 
     @Override
@@ -581,7 +581,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private boolean shouldExecuteInBackground(CancelCallback callback) {
-        return mUIThread.isCurrentThread() && !(callback instanceof UICancelCallback);
+        return mThreadHelper.isCurrentThread() && !(callback instanceof UICancelCallback);
     }
 
     @Override
@@ -687,7 +687,7 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
     }
 
     private boolean shouldExecuteInBackground(AlwaysCallback callback) {
-        return mUIThread.isCurrentThread() && !(callback instanceof UIAlwaysCallback);
+        return mThreadHelper.isCurrentThread() && !(callback instanceof UIAlwaysCallback);
     }
 
     private void printStateChanged(String newState) {

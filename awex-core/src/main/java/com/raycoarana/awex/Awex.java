@@ -1,9 +1,5 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.callbacks.CancelCallback;
-import com.raycoarana.awex.callbacks.DoneCallback;
-import com.raycoarana.awex.callbacks.FailCallback;
-import com.raycoarana.awex.callbacks.ProgressCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
 import com.raycoarana.awex.state.PoolStateImpl;
 import com.raycoarana.awex.state.QueueStateImpl;
@@ -20,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Awex {
 
-    private final UIThread mUIThread;
+    private final ThreadHelper mThreadHelper;
     private final Logger mLogger;
     private final AtomicLong mWorkIdProvider = new AtomicLong();
     private final Map<Integer, AwexTaskQueue> mTaskQueueMap;
@@ -33,12 +29,8 @@ public class Awex {
 
     private AwexPromise mAbsentPromise;
 
-    public Awex(UIThread uiThread, Logger logger) {
-        this(uiThread, logger, PoolPolicy.DEFAULT);
-    }
-
-    public Awex(UIThread uiThread, Logger logger, PoolPolicy poolPolicy) {
-        mUIThread = uiThread;
+    public Awex(ThreadHelper threadHelper, Logger logger, PoolPolicy poolPolicy) {
+        mThreadHelper = threadHelper;
         mLogger = logger;
         mTaskQueueMap = Map.Provider.getSync();
         mWorkers = Map.Provider.getSync();
@@ -55,8 +47,8 @@ public class Awex {
         mAbsentPromise.reject(new AbsentValueException());
     }
 
-    UIThread provideUIThread() {
-        return mUIThread;
+    ThreadHelper provideUIThread() {
+        return mThreadHelper;
     }
 
     Logger provideLogger() {
@@ -306,7 +298,7 @@ public class Awex {
         @Override
         public void executeImmediately(Task task) {
             task.markQueue(null);
-            new RealTimeWorker(mThreadIdProvider.incrementAndGet(), task, mLogger);
+            new RealTimeWorker(mThreadIdProvider.incrementAndGet(), task, mThreadHelper, mLogger);
         }
 
         @Override
@@ -332,7 +324,7 @@ public class Awex {
         }
 
         @Override
-        public synchronized int createWorker(int queueId) {
+        public synchronized int createWorker(int queueId, int priority) {
             AwexTaskQueue taskQueue = mTaskQueueMap.get(queueId);
             Map<Integer, Worker> workersOfQueue = mWorkers.get(queueId);
             if (workersOfQueue == null) {
@@ -341,7 +333,7 @@ public class Awex {
             }
 
             int id = mThreadIdProvider.incrementAndGet();
-            workersOfQueue.put(id, new Worker(id, taskQueue, mLogger, mWorkerListener));
+            workersOfQueue.put(id, new Worker(id, priority, taskQueue, mThreadHelper, mLogger, mWorkerListener));
             return id;
         }
 

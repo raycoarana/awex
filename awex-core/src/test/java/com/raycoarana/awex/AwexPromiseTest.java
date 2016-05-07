@@ -158,7 +158,7 @@ public class AwexPromiseTest extends BasePromiseTest {
                 .always(mUIAlwaysCallback);
         mPromise.resolve(SOME_RESULT);
 
-        verify(mUIThread, times(2)).post(any(Runnable.class));
+        verify(mThreadHelper, times(2)).post(any(Runnable.class));
         verify(mUIDoneCallback).onDone(SOME_RESULT);
         verify(mUIAlwaysCallback).onAlways();
     }
@@ -173,7 +173,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.done(mUIDoneCallback)
                 .always(mUIAlwaysCallback);
 
-        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mThreadHelper, never()).post(any(Runnable.class));
         verify(mAwex, never()).submit(any(Runnable.class));
         verify(mUIDoneCallback).onDone(SOME_RESULT);
         verify(mUIAlwaysCallback).onAlways();
@@ -189,7 +189,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.done(mDoneCallback)
                 .always(mAlwaysCallback);
 
-        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mThreadHelper, never()).post(any(Runnable.class));
         verify(mAwex, times(2)).submit(any(Runnable.class));
         verify(mDoneCallback).onDone(SOME_RESULT);
         verify(mAlwaysCallback).onAlways();
@@ -204,7 +204,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.done(mUIDoneCallback)
                 .always(mUIAlwaysCallback);
 
-        verify(mUIThread, times(2)).post(any(Runnable.class));
+        verify(mThreadHelper, times(2)).post(any(Runnable.class));
         verify(mUIDoneCallback).onDone(SOME_RESULT);
         verify(mUIAlwaysCallback).onAlways();
     }
@@ -284,7 +284,7 @@ public class AwexPromiseTest extends BasePromiseTest {
                 .always(mUIAlwaysCallback);
         mPromise.reject(REJECT_EXCEPTION);
 
-        verify(mUIThread, times(2)).post(any(Runnable.class));
+        verify(mThreadHelper, times(2)).post(any(Runnable.class));
         verify(mUIFailCallback).onFail(REJECT_EXCEPTION);
         verify(mUIAlwaysCallback).onAlways();
     }
@@ -298,7 +298,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.fail(mUIFailCallback)
                 .always(mUIAlwaysCallback);
 
-        verify(mUIThread, times(2)).post(any(Runnable.class));
+        verify(mThreadHelper, times(2)).post(any(Runnable.class));
         verify(mUIFailCallback).onFail(REJECT_EXCEPTION);
         verify(mUIAlwaysCallback).onAlways();
     }
@@ -332,7 +332,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.fail(mFailCallback)
                 .always(mAlwaysCallback);
 
-        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mThreadHelper, never()).post(any(Runnable.class));
         verify(mAwex, times(2)).submit(any(Runnable.class));
         verify(mFailCallback).onFail(any(RuntimeException.class));
         verify(mAlwaysCallback).onAlways();
@@ -417,7 +417,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.cancel(mUICancelCallback);
         mPromise.cancelTask();
 
-        verify(mUIThread).post(any(Runnable.class));
+        verify(mThreadHelper).post(any(Runnable.class));
         verify(mUICancelCallback).onCancel();
     }
 
@@ -430,7 +430,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.cancel(mCancelCallback);
         mPromise.cancelTask();
 
-        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mThreadHelper, never()).post(any(Runnable.class));
         verify(mAwex).submit(any(Runnable.class));
         verify(mCancelCallback).onCancel();
     }
@@ -444,7 +444,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.cancelTask();
         mPromise.cancel(mCancelCallback);
 
-        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mThreadHelper, never()).post(any(Runnable.class));
         verify(mAwex).submit(any(Runnable.class));
         verify(mCancelCallback).onCancel();
     }
@@ -485,7 +485,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.progress(mUIProgressCallback);
         mPromise.notifyProgress(SOME_PROGRESS);
 
-        verify(mUIThread).post(any(Runnable.class));
+        verify(mThreadHelper).post(any(Runnable.class));
         verify(mUIProgressCallback).onProgress(SOME_PROGRESS);
     }
 
@@ -498,7 +498,7 @@ public class AwexPromiseTest extends BasePromiseTest {
         mPromise.progress(mUIProgressCallback);
         mPromise.notifyProgress(SOME_PROGRESS);
 
-        verify(mUIThread, never()).post(any(Runnable.class));
+        verify(mThreadHelper, never()).post(any(Runnable.class));
         verify(mUIProgressCallback).onProgress(SOME_PROGRESS);
     }
 

@@ -31,7 +31,8 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile 'com.raycoarana.awex:awex-core:0.0.2'
+    //compile 'com.raycoarana.awex:awex-core:0.0.2'
+    compile project(':awex-core')
 
     compile 'com.android.support:appcompat-v7:23.3.0'
 

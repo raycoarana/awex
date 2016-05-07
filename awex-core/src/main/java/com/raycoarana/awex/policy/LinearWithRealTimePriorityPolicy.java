@@ -5,24 +5,26 @@ import com.raycoarana.awex.Task;
 import com.raycoarana.awex.state.PoolState;
 import com.raycoarana.awex.state.QueueState;
 
-public class LinearWithRealTimePriority extends PoolPolicy {
+public class LinearWithRealTimePriorityPolicy extends PoolPolicy {
 
     private static final int QUEUE_ID = 1;
 
+    private final int mDefaultPriority;
     private final int mMaxThreads;
 
-    public LinearWithRealTimePriority() {
-        this(Runtime.getRuntime().availableProcessors());
+    public LinearWithRealTimePriorityPolicy(int defaultPriority) {
+        this(defaultPriority, Runtime.getRuntime().availableProcessors());
     }
 
-    public LinearWithRealTimePriority(int maxThreads) {
+    public LinearWithRealTimePriorityPolicy(int defaultPriority, int maxThreads) {
+        mDefaultPriority = defaultPriority;
         mMaxThreads = maxThreads;
     }
 
     @Override
     public void onStartUp() {
         createQueue(QUEUE_ID);
-        createWorker(QUEUE_ID);
+        createWorker(QUEUE_ID, mDefaultPriority);
     }
 
     @Override
@@ -34,7 +36,7 @@ public class LinearWithRealTimePriority extends PoolPolicy {
             executeImmediately(task);
         } else {
             if (queueState.getWaiters() == 0 && queueState.numberOfWorkers() < mMaxThreads) {
-                createWorker(QUEUE_ID);
+                createWorker(QUEUE_ID, mDefaultPriority);
             }
             queueTask(QUEUE_ID, task);
         }

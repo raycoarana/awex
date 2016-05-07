@@ -19,7 +19,7 @@ public class BasePromiseTest {
     @Mock
     protected Task mTask;
     @Mock
-    protected UIThread mUIThread;
+    protected ThreadHelper mThreadHelper;
     @Mock
     protected Logger mLogger;
 
@@ -36,7 +36,7 @@ public class BasePromiseTest {
 
     private void givenAnAwex() {
         when(mAwex.provideLogger()).thenReturn(mLogger);
-        when(mAwex.provideUIThread()).thenReturn(mUIThread);
+        when(mAwex.provideUIThread()).thenReturn(mThreadHelper);
         when(mAwex.getNumberOfThreads()).thenReturn(4);
 
         when(mAwex.newAwexPromise()).thenAnswer(new Answer<Object>() {
@@ -70,7 +70,7 @@ public class BasePromiseTest {
     }
 
     protected void givenThatUIThreadIsCurrentThread() {
-        when(mUIThread.isCurrentThread()).thenReturn(true);
+        when(mThreadHelper.isCurrentThread()).thenReturn(true);
     }
 
     private void givenAUIThread() {
@@ -80,6 +80,6 @@ public class BasePromiseTest {
                 ((Runnable) invocation.getArguments()[0]).run();
                 return null;
             }
-        }).when(mUIThread).post(isA(Runnable.class));
+        }).when(mThreadHelper).post(isA(Runnable.class));
     }
 }

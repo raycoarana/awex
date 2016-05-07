@@ -2,8 +2,8 @@ package com.raycoarana.awex.sample;
 
 import com.raycoarana.awex.Awex;
 import com.raycoarana.awex.android.AndroidLogger;
-import com.raycoarana.awex.android.AndroidUIThread;
-import com.raycoarana.awex.policy.LinearWithRealTimePriority;
+import com.raycoarana.awex.android.AndroidThreadHelper;
+import com.raycoarana.awex.policy.LinearWithRealTimePriorityPolicy;
 
 public class AwexProvider {
 
@@ -13,7 +13,7 @@ public class AwexProvider {
 
     public static synchronized Awex get() {
         if(sInstance == null) {
-            sInstance = new Awex(new AndroidUIThread(), new AndroidLogger(), new LinearWithRealTimePriority(MAX_THREADS));
+            sInstance = new Awex(new AndroidThreadHelper(), new AndroidLogger(), new LinearWithRealTimePriorityPolicy(MAX_THREADS));
         }
         return sInstance;
     }

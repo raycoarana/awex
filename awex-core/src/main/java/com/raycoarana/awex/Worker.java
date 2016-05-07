@@ -7,17 +7,21 @@ class Worker implements Runnable {
 
     private final int mId;
     private final Thread mThread;
+    private final ThreadHelper mThreadHelper;
     private final AwexTaskQueue mWorkQueue;
     private final Logger mLogger;
     private final WorkerListener mListener;
+    private final int mPriority;
 
     private boolean mExecutingTask;
     private boolean mDie = false;
     private Task mCurrentTask;
     private long mLastTimeActive;
 
-    public Worker(int id, AwexTaskQueue workQueue, Logger logger, WorkerListener listener) {
+    public Worker(int id, int priority, AwexTaskQueue workQueue, ThreadHelper threadHelper, Logger logger, WorkerListener listener) {
         mId = id;
+        mPriority = priority;
+        mThreadHelper = threadHelper;
         mThread = new Thread(this, "Awex worker " + id);
         mWorkQueue = workQueue;
         mLogger = logger;
@@ -32,6 +36,8 @@ class Worker implements Runnable {
 
     @Override
     public void run() {
+        mThreadHelper.setUpPriorityToCurrentThread(mPriority);
+
         if (mLogger.isEnabled()) {
             mLogger.v("Worker " + mId + " starting...");
         }

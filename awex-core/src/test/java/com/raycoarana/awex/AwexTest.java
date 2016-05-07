@@ -1,6 +1,6 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.policy.LinearWithRealTimePriority;
+import com.raycoarana.awex.policy.LinearWithRealTimePriorityPolicy;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +22,7 @@ public class AwexTest {
     private static final Integer SOME_VALUE = 42;
 
     @Mock
-    private UIThread mUIThread;
+    private ThreadHelper mThreadHelper;
     @Mock
     private Logger mLogger;
 
@@ -385,7 +385,7 @@ public class AwexTest {
     }
 
     private void setUpAwex() {
-        mAwex = new Awex(mUIThread, new ConsoleLogger(), new LinearWithRealTimePriority(1));
+        mAwex = new Awex(mThreadHelper, new ConsoleLogger(), new LinearWithRealTimePriorityPolicy(0, 1));
     }
 
 }
