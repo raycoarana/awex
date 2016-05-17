@@ -3,8 +3,11 @@ package com.raycoarana.awex;
 import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
+import com.raycoarana.awex.callbacks.DonePipeCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
+import com.raycoarana.awex.callbacks.FailPipeCallback;
 import com.raycoarana.awex.callbacks.ProgressCallback;
+import com.raycoarana.awex.callbacks.ProgressPipeCallback;
 import com.raycoarana.awex.callbacks.ThenCallback;
 import com.raycoarana.awex.transform.Filter;
 import com.raycoarana.awex.transform.Mapper;
@@ -122,6 +125,10 @@ public interface Promise<Result, Progress> {
      * @return the provided promise
      */
     Promise<Result, Progress> pipe(Promise<Result, Progress> promise);
+
+    <Result_Out, Progress_Out> Promise<Result_Out, Progress_Out> pipe(DonePipeCallback<Result, Result_Out,
+            Progress_Out> donePipeCallback, FailPipeCallback<Result_Out, Progress_Out> failPipeCallback,
+            ProgressPipeCallback progressPipeCallback);
 
     <U> Promise<U, Progress> mapSingle(Mapper<Result, U> mapper);
 
