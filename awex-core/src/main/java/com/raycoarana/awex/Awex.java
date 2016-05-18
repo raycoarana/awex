@@ -1,15 +1,11 @@
 package com.raycoarana.awex;
 
-import com.raycoarana.awex.callbacks.DonePipeCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
-import com.raycoarana.awex.callbacks.FailPipeCallback;
-import com.raycoarana.awex.callbacks.ProgressPipeCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
 import com.raycoarana.awex.exceptions.EmptyTasksException;
 import com.raycoarana.awex.state.PoolStateImpl;
 import com.raycoarana.awex.state.QueueStateImpl;
 import com.raycoarana.awex.util.Map;
-import com.sun.javaws.exceptions.InvalidArgumentException;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -150,25 +146,24 @@ public class Awex {
      */
     public <Result, Progress> Promise<Result, Progress> runUntilFirstDone(final
     Collection<Task<Result, Progress>> tasks) {
-        Promise<Result, Progress> promise = null;
-
-        for (final Task<Result, Progress> promiseObjectTask : tasks) {
-            if (promise == null) {
-                promise = this.submit(promiseObjectTask);
+        final ResolvablePromise<Result, Progress> promise = newAwexPromise();
+        int count = 0;
+        for (final Task<Result, Progress> task : tasks) {
+            if (count == 0) {
+                submit(task).pipe(promise);
             } else {
-                promise = promise.pipe(DonePipeCallback.EMPTY, new FailPipeCallback() {
+                promise.fail(new FailCallback() {
                     @Override
-                    public Promise onFail(Exception exception) {
-                        return submit(promiseObjectTask);
+                    public void onFail(Exception exception) {
+                        submit(task).pipe(promise);
                     }
-                }, ProgressPipeCallback.EMPTY);
+                });
             }
+            count++;
         }
 
-        if (promise == null) {
-            ResolvablePromise<Result, Progress> resolvablePromise = new AwexPromise<>(this);
-            resolvablePromise.reject(new EmptyTasksException());
-            promise = resolvablePromise;
+        if (count == 0) {
+            promise.reject(new EmptyTasksException());
         }
 
         return promise;

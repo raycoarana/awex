@@ -3,11 +3,8 @@ package com.raycoarana.awex;
 import com.raycoarana.awex.callbacks.AlwaysCallback;
 import com.raycoarana.awex.callbacks.CancelCallback;
 import com.raycoarana.awex.callbacks.DoneCallback;
-import com.raycoarana.awex.callbacks.DonePipeCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
-import com.raycoarana.awex.callbacks.FailPipeCallback;
 import com.raycoarana.awex.callbacks.ProgressCallback;
-import com.raycoarana.awex.callbacks.ProgressPipeCallback;
 import com.raycoarana.awex.callbacks.ThenCallback;
 import com.raycoarana.awex.callbacks.UIAlwaysCallback;
 import com.raycoarana.awex.callbacks.UICancelCallback;
@@ -687,14 +684,6 @@ class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progres
             }
         });
         return promise;
-    }
-
-    @Override
-    public <Result_Out, Progress_Out> Promise<Result_Out, Progress_Out> pipe(
-            DonePipeCallback<Result, Result_Out, Progress_Out> donePipeCallback,
-            FailPipeCallback<Result_Out, Progress_Out> failPipeCallback,
-            ProgressPipeCallback progressPipeCallback) {
-        return new PipedPromise<>(this, donePipeCallback, failPipeCallback, progressPipeCallback);
     }
 
     private boolean shouldExecuteInBackground(AlwaysCallback callback) {
