@@ -27,7 +27,7 @@ import java.util.List;
 class AwexPromise<Result, Progress> implements ResolvablePromise<Result, Progress> {
 
     protected final Awex mAwex;
-    protected final Task mTask;
+    private final Task mTask;
 
     private final ThreadHelper mThreadHelper;
     private final Logger mLogger;
