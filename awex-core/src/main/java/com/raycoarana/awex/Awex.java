@@ -128,9 +128,9 @@ public class Awex {
      * @returna new promise that will be resolved with the first task completed correctly
      */
     @SafeVarargs
-    public final <Result, Progress> Promise<Result, Progress> runUntilFirstDone(final
+    public final <Result, Progress> Promise<Result, Progress> sequentiallyUntilFirstDone(final
     Task<Result, Progress>... tasks) {
-        return runUntilFirstDone(Arrays.asList(tasks));
+        return sequentiallyUntilFirstDone(Arrays.asList(tasks));
     }
 
     /**
@@ -144,7 +144,7 @@ public class Awex {
      * @param <Progress> type of progress of the promises
      * @returna new promise that will be resolved with the first task completed correctly
      */
-    public <Result, Progress> Promise<Result, Progress> runUntilFirstDone(final
+    public <Result, Progress> Promise<Result, Progress> sequentiallyUntilFirstDone(final
     Collection<Task<Result, Progress>> tasks) {
         final ResolvablePromise<Result, Progress> promise = newAwexPromise();
         int count = 0;
