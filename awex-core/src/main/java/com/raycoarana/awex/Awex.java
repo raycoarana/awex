@@ -1,5 +1,7 @@
 package com.raycoarana.awex;
 
+import com.raycoarana.awex.callbacks.CancelCallback;
+import com.raycoarana.awex.callbacks.DoneCallback;
 import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
 import com.raycoarana.awex.exceptions.EmptyTasksException;
@@ -146,18 +148,30 @@ public class Awex {
      */
     public <Result, Progress> Promise<Result, Progress> sequentiallyUntilFirstDone(final
     Collection<Task<Result, Progress>> tasks) {
-        final ResolvablePromise<Result, Progress> promise = newAwexPromise();
+        ResolvablePromise<Result, Progress> promise = newAwexPromise();
         int count = 0;
         for (final Task<Result, Progress> task : tasks) {
             if (count == 0) {
                 submit(task).pipe(promise);
             } else {
+                final ResolvablePromise<Result, Progress> nextPromise = newAwexPromise();
                 promise.fail(new FailCallback() {
                     @Override
                     public void onFail(Exception exception) {
-                        submit(task).pipe(promise);
+                        submit(task).pipe(nextPromise);
+                    }
+                }).done(new DoneCallback<Result>() {
+                    @Override
+                    public void onDone(Result result) {
+                        nextPromise.resolve(result);
+                    }
+                }).cancel(new CancelCallback() {
+                    @Override
+                    public void onCancel() {
+                        nextPromise.cancelTask();
                     }
                 });
+                promise = nextPromise;
             }
             count++;
         }

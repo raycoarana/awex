@@ -1,14 +1,19 @@
 package com.raycoarana.awex;
 
+import com.raycoarana.awex.exceptions.EmptyTasksException;
 import com.raycoarana.awex.policy.LinearWithRealTimePriorityPolicy;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -16,10 +21,15 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class AwexTest {
 
     private static final Integer SOME_VALUE = 42;
+    private static final Integer SOME_OTHER_VALUE = 43;
+    public static final String ANY_ERROR = "Argument not valid!";
+    public static final String ANY_OTHER_ERROR = "Other not valid!";
+
 
     @Mock
     private ThreadHelper mThreadHelper;
@@ -326,6 +336,54 @@ public class AwexTest {
         assertThat(afterAllPromise, instanceOf(AfterAllPromise.class));
     }
 
+
+    @Test
+    public void shouldReturnFirstCorrectResultWhenSequentiallyUntilFirstDone() throws Exception {
+        setUpAwex();
+        Task<Integer, Float> incorrectTask1 = givenErrorTask(ANY_ERROR);
+        Task<Integer, Float> incorrectTask2 = givenErrorTask(ANY_OTHER_ERROR);
+        Task<Integer, Float> correctTask1 = givenCorrectTask(SOME_VALUE);
+        Task<Integer, Float> correctTask2 = givenCorrectTask(SOME_OTHER_VALUE);
+        List<Task<Integer, Float>> tasks = Arrays.<Task<Integer, Float>>asList(new Task[] {incorrectTask1,
+                incorrectTask2,
+                correctTask1,
+                correctTask2});
+
+        Promise<Integer, Float> mTasksPromise = mAwex.sequentiallyUntilFirstDone(tasks);
+
+        assertEquals(SOME_VALUE, mTasksPromise.getResult());
+    }
+
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
+
+    @Test
+    public void shouldReturnLastErrorWhenSequentiallyUntilFirstDoneAndAllTheTasksThrowErrors() throws Exception {
+        expectedEx.expect(IllegalArgumentException.class);
+        expectedEx.expectMessage(ANY_OTHER_ERROR);
+
+        setUpAwex();
+        Task<Integer, Float> incorrectTask1 = givenErrorTask(ANY_ERROR);
+        Task<Integer, Float> incorrectTask2 = givenErrorTask(ANY_ERROR);
+        Task<Integer, Float> incorrectTask3 = givenErrorTask(ANY_OTHER_ERROR);
+        List<Task<Integer, Float>> tasks = Arrays.<Task<Integer, Float>>asList(new Task[] {incorrectTask1,
+                incorrectTask2, incorrectTask3});
+
+        Promise<Integer, Float> mTasksPromise = mAwex.sequentiallyUntilFirstDone(tasks);
+
+        mTasksPromise.getResult();
+    }
+
+    @Test(expected = EmptyTasksException.class)
+    public void shouldThrowEmptyTasksExceptionWhenSequentiallyUntilFirstDoneAndNoTasks() throws Exception {
+        setUpAwex();
+        List<Task<Integer, Float>> tasks = new ArrayList<>();
+
+        Promise<Integer, Float> mTasksPromise = mAwex.sequentiallyUntilFirstDone(tasks);
+
+        mTasksPromise.getResult();
+    }
+
     @Test
     public void shouldAbortTaskInQueueIfTimeoutExpires() {
         setUpAwex();
@@ -383,6 +441,26 @@ public class AwexTest {
 
         semaphore.release();
     }
+
+    private Task<Integer, Float> givenErrorTask(final String messageError) {
+        return new Task<Integer, Float>() {
+            @Override
+            protected Integer run() throws InterruptedException {
+                throw new IllegalArgumentException(messageError);
+            }
+        };
+    }
+
+    private Task<Integer, Float> givenCorrectTask(final int result) {
+        return new Task<Integer, Float>() {
+            @Override
+            protected Integer run() throws InterruptedException {
+                return result;
+            }
+        };
+    }
+
+
 
     private void setUpAwex() {
         mAwex = new Awex(mThreadHelper, new ConsoleLogger(), new LinearWithRealTimePriorityPolicy(0, 1));
