@@ -1,6 +1,10 @@
 package com.raycoarana.awex;
 
+import com.raycoarana.awex.callbacks.CancelCallback;
+import com.raycoarana.awex.callbacks.DoneCallback;
+import com.raycoarana.awex.callbacks.FailCallback;
 import com.raycoarana.awex.exceptions.AbsentValueException;
+import com.raycoarana.awex.exceptions.EmptyTasksException;
 import com.raycoarana.awex.state.PoolStateImpl;
 import com.raycoarana.awex.state.QueueStateImpl;
 import com.raycoarana.awex.util.Map;
@@ -113,6 +117,72 @@ public class Awex {
             }
         }
     }
+
+	/**
+     * Creates a new promise that will be resolved with the result of the first task which completes correctly.
+     * Task will execute sequentially until the first one is resolved.
+     * If all the promises fail promise will be rejected with the last exception thrown.
+     * In case the collection of tasks is empty the promise will be rejected with an EmptyTasksException.
+     *
+     * @param tasks source tasks to execute sequentially
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
+     * @returna new promise that will be resolved with the first task completed correctly
+     */
+    @SafeVarargs
+    public final <Result, Progress> Promise<Result, Progress> sequentiallyUntilFirstDone(final
+    Task<Result, Progress>... tasks) {
+        return sequentiallyUntilFirstDone(Arrays.asList(tasks));
+    }
+
+    /**
+     * Creates a new promise that will be resolved with the result of the first task which completes correctly.
+     * Task will execute sequentially until the first one is resolved.
+     * If all the promises fail promise will be rejected with the last exception thrown.
+     * In case the collection of tasks is empty the promise will be rejected with an EmptyTasksException.
+     *
+     * @param tasks source tasks to execute sequentially
+     * @param <Result> type of result of the promises
+     * @param <Progress> type of progress of the promises
+     * @returna new promise that will be resolved with the first task completed correctly
+     */
+    public <Result, Progress> Promise<Result, Progress> sequentiallyUntilFirstDone(final
+    Collection<Task<Result, Progress>> tasks) {
+        ResolvablePromise<Result, Progress> promise = newAwexPromise();
+        int count = 0;
+        for (final Task<Result, Progress> task : tasks) {
+            if (count == 0) {
+                submit(task).pipe(promise);
+            } else {
+                final ResolvablePromise<Result, Progress> nextPromise = newAwexPromise();
+                promise.fail(new FailCallback() {
+                    @Override
+                    public void onFail(Exception exception) {
+                        submit(task).pipe(nextPromise);
+                    }
+                }).done(new DoneCallback<Result>() {
+                    @Override
+                    public void onDone(Result result) {
+                        nextPromise.resolve(result);
+                    }
+                }).cancel(new CancelCallback() {
+                    @Override
+                    public void onCancel() {
+                        nextPromise.cancelTask();
+                    }
+                });
+                promise = nextPromise;
+            }
+            count++;
+        }
+
+        if (count == 0) {
+            promise.reject(new EmptyTasksException());
+        }
+
+        return promise;
+    }
+
 
     /**
      * Creates a new promise that will be resolved only if all promises get resolved. If any of the
