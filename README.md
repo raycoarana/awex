@@ -342,6 +342,10 @@ or Gradle:
 compile 'com.raycoarana.awex:awex-android:0.0.2'
 ```
 
+Contributors
+-------
+* Alejandro Miragall (https://github.com/alexmiragall) 
+
 License
 -------
 
